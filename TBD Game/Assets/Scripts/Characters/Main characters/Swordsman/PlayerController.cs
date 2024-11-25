@@ -1,13 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     public float moveSpeed;
-    public bool isMoving;
+    private bool isMoving;
 
-    public Vector2 input;
+    private Vector2 input;
+
+    private Animator animator;
+
+    private void Awake()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     void Update()
     {
@@ -18,23 +26,26 @@ public class PlayerController : MonoBehaviour
 
             if (input != Vector2.zero)
             {
+                animator.SetFloat("moveX", input.x);
+                animator.SetFloat("moveY", input.y);
+
                 var targetPos = transform.position;
                 targetPos.x += (float)(input.x * 0.1);
                 targetPos.y += (float)(input.y * 0.1);
 
-                StartCoroutine(Move(targetPos));
+                Walk(targetPos);
             }
         }
     }
 
-    IEnumerator Move(Vector3 targetPos)
+    private async void Walk(Vector3 targetPos)
     {
         isMoving = true;
 
         while ((targetPos - transform.position).sqrMagnitude > Mathf.Epsilon)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
-            yield return null;
+            await Task.Yield();
         }
 
         transform.position = targetPos;
