@@ -10,11 +10,9 @@ public class PlayerController : MonoBehaviour
 
     private Vector2 input;
 
-    private Animator animator;
-
     private void Awake()
     {
-        animator = GetComponent<Animator>();
+        
     }
 
     void Update()
@@ -26,8 +24,6 @@ public class PlayerController : MonoBehaviour
 
             if (input != Vector2.zero)
             {
-                animator.SetFloat("moveX", input.x);
-                animator.SetFloat("moveY", input.y);
 
                 var targetPos = transform.position;
                 targetPos.x += (float)(input.x * 0.1);
