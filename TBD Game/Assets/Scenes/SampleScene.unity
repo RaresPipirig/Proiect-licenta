@@ -298,6 +298,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8653719598885068355, guid: dd85c2aaf10f7f44aad76ba74579b47e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1196634744}
+    - targetCorrespondingSourceObject: {fileID: -8653719598885068355, guid: dd85c2aaf10f7f44aad76ba74579b47e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1196634747}
   m_SourcePrefab: {fileID: 4843985084834002234, guid: dd85c2aaf10f7f44aad76ba74579b47e, type: 3}
 --- !u!1 &1196634741 stripped
 GameObject:
@@ -356,6 +359,8 @@ MonoBehaviour:
   current: {fileID: 0}
   animations: {fileID: 1196634744}
   animator: {fileID: 0}
+  isMoving: 0
+  isIdling: 0
   controller: {fileID: 9100000, guid: a63cb72675fc6ae44a1adf467f438103, type: 2}
 --- !u!114 &1196634746
 MonoBehaviour:
@@ -369,7 +374,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d061d4103b6dd1e48931407bfd1f1cf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 2
+  moveSpeed: 2.5
+  isMoving: 0
+  dashSpeed: 5
+  isDashing: 0
+  maxDashTime: 0.7
+  minDashTime: 0.2
+  sprintSpeed: 3.5
+  isSprinting: 0
+  dashCooldown: 0.7
+  canDash: 1
+  animationController: {fileID: 1196634745}
+--- !u!50 &1196634747
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196634741}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

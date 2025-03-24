@@ -25,11 +25,11 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
                 case "Up":
                     return Up;
                 default:
-                    return Down;
+                    return null;
             }
         }
 
-        public RuntimeAnimatorController GetAnimator(string direction)
+        public RuntimeAnimatorController GetRuntimeController(string direction)
         {
             switch (direction)
             {
@@ -38,7 +38,22 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
                 case "Up":
                     return UpController;
                 default:
-                    return DownController;
+                    return null;
+            }
+        }
+
+        public void PlayIdle(Animator animator, string direction)
+        {
+            float transitionTime = (float)0.5;
+
+            switch(direction)
+            {
+                case "Down":
+                    animator.CrossFade("idle_down_hub.anim", transitionTime);
+                    break;
+                case "Up":
+                    animator.CrossFade("idle_up_hub.anim", transitionTime);
+                    break;
             }
         }
     }

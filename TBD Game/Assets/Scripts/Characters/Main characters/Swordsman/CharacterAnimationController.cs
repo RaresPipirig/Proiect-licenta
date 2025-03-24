@@ -15,13 +15,25 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
 
         public Animator animator;
         private Vector2 input;
-        private bool isMoving;
+        public bool isMoving = false;
+        public bool isIdling = false;
         public RuntimeAnimatorController controller;
 
         private void Awake()
         {
-            current = animations.GetPrefab(direction);
-            animator = GetComponent<Animator>();
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            foreach (Renderer renderer in renderers)
+            {
+                renderer.enabled = false;
+            }
+
+            current = Instantiate(animations.GetPrefab(direction), transform);
+            animator = current.GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = current.AddComponent<Animator>();
+            }
+            animator.runtimeAnimatorController = animations.GetRuntimeController(direction);
         }
 
         void Update()
@@ -39,6 +51,11 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
                         ChangePrefab(animations.GetPrefab(direction));
                     }
                 }
+            }
+            else if (!isIdling)
+            {
+                animations.PlayIdle(animator, direction);
+                isIdling = true;
             }
         }
 
@@ -66,11 +83,17 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
             {
                 if (current != null)
                 {
+                    current.SetActive(false);
                     Destroy(current);
                 }
 
                 current = Instantiate(prefab, transform);
                 animator = current.GetComponent<Animator>();
+                if (animator == null)
+                {
+                    animator = current.AddComponent<Animator>();
+                }
+                animator.runtimeAnimatorController = animations.GetRuntimeController(direction);
                 
             }
             catch (Exception e)
