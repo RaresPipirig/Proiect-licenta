@@ -8,6 +8,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
+    public AttackController attackController;
+
     public float moveSpeed;
     public bool isMoving;
 
@@ -20,33 +22,35 @@ public class PlayerController : MonoBehaviour
 
     public float sprintSpeed;
     public bool isSprinting;
-    private bool sprintFlag;
+    private bool canSprint;
 
     public float dashCooldown;
     public bool canDash = true;
     public bool hasReleasedDash;
 
-
-    public CharacterAnimationController animationController;
-
     private PlayerInput playerInput;
     private Vector2 movementInput;
     private Rigidbody2D rb;
-    private Vector2 lastRecordedDirection;
+    internal Vector2 lastRecordedDirection = Vector2.down;
+
+    public LayerMask enemyLayer;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerInput = new PlayerInput();
-        
     }
 
     private void OnEnable()
     {
-        playerInput.Player.Move.performed += ctx => movementInput = ctx.ReadValue<Vector2>();
+        playerInput.Player.Move.performed += ctx => movementInput = ctx.ReadValue<Vector2>().normalized;
         playerInput.Player.Move.canceled += ctx => movementInput = Vector2.zero;
         playerInput.Player.Dash.started += ctx => StartDash();
         playerInput.Player.Dash.canceled += ctx => StopDash();
+        playerInput.Player.Aim.performed += ctx => attackController.aimInput = ctx.ReadValue<Vector2>().normalized;
+        playerInput.Player.Aim.canceled += ctx => attackController.aimInput = Vector2.zero;
+        playerInput.Player.SwordSlash.performed += ctx => attackController.SwordSlash();
+
 
         playerInput.Enable();
     }
@@ -69,7 +73,7 @@ public class PlayerController : MonoBehaviour
         isDashing = true;
         canDash = false;
         stopDash = false;
-        sprintFlag = true;
+        canSprint = true;
         
         dashStartTime = Time.time;
 
@@ -80,7 +84,7 @@ public class PlayerController : MonoBehaviour
         }
 
         isDashing = false;
-        if (sprintFlag)
+        if (canSprint)
         {
             isSprinting = true;
         }
@@ -94,7 +98,7 @@ public class PlayerController : MonoBehaviour
     {
         if (isDashing)
         {
-            sprintFlag = false;
+            canSprint = false;
         }
         stopDash = true;
 
@@ -115,8 +119,6 @@ public class PlayerController : MonoBehaviour
 
     private void Move(Vector2 targetPos)
     {
-        targetPos.Normalize();
-
         if (targetPos != Vector2.zero)
         {
             isMoving = true;

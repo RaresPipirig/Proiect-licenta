@@ -17,16 +17,20 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
         private Vector2 input;
         public bool isMoving = false;
         public bool isIdling = false;
+
         public RuntimeAnimatorController controller;
+        public PlayerController playerController;
 
         private void Awake()
         {
+            //disable renderers of children so that we can swap between prefabs
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             foreach (Renderer renderer in renderers)
             {
                 renderer.enabled = false;
             }
 
+            //initialize prefab and animator controller for default direction
             current = Instantiate(animations.GetPrefab(direction), transform);
             animator = current.GetComponent<Animator>();
             if (animator == null)
@@ -34,6 +38,12 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
                 animator = current.AddComponent<Animator>();
             }
             animator.runtimeAnimatorController = animations.GetRuntimeController(direction);
+
+            SpriteRenderer[] spriteRenderer = GetComponentsInChildren<SpriteRenderer>();
+            foreach(SpriteRenderer renderer in spriteRenderer)
+            {
+                renderer.sortingLayerName = "Player";
+            }
         }
 
         void Update()
@@ -94,7 +104,13 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
                     animator = current.AddComponent<Animator>();
                 }
                 animator.runtimeAnimatorController = animations.GetRuntimeController(direction);
-                
+
+                SpriteRenderer[] spriteRenderer = GetComponentsInChildren<SpriteRenderer>();
+                foreach (SpriteRenderer renderer in spriteRenderer)
+                {
+                    renderer.sortingLayerName = "Player";
+                }
+
             }
             catch (Exception e)
             {
