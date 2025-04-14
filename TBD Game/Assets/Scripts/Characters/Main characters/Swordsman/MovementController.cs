@@ -13,6 +13,7 @@ public class MovementController : MonoBehaviour
 
     public float moveSpeed;
     public bool isMoving;
+    public bool canMove = true;
 
     public float dashSpeed;
     public bool isDashing;
@@ -43,7 +44,10 @@ public class MovementController : MonoBehaviour
             rb.velocity = Vector2.zero;
         }
 
-        Move(movementInput);
+        if (canMove)
+        {
+            Move(movementInput);
+        }
     }
 
     internal async void StartDash()
@@ -55,15 +59,19 @@ public class MovementController : MonoBehaviour
         canDash = false;
         stopDash = false;
         canSprint = true;
+        playerController.isInvincible = true;
 
         dashStartTime = Time.time;
 
         while (!stopDash && (Time.time - dashStartTime) < maxDashTime
             || (Time.time - dashStartTime) < minDashTime)
         {
+            if ((Time.time - dashStartTime) > minDashTime)
+                playerController.isInvincible = false;
             await Task.Yield();
         }
 
+        playerController.isInvincible = false;
         isDashing = false;
         if (canSprint)
         {

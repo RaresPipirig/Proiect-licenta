@@ -17,6 +17,11 @@ public class PlayerController : MonoBehaviour
     internal Transform aimIndicator;
     public LayerMask enemyLayer;
 
+    public int HP;
+    public bool isInvincible;
+    public float knockbackForce;
+    public float knockbackDuration;
+
     private void Awake()
     {
         playerInput = new PlayerInput();
@@ -51,5 +56,26 @@ public class PlayerController : MonoBehaviour
     {
         float angle = Mathf.Atan2(attackController.aimDirection.y, attackController.aimDirection.x) * Mathf.Rad2Deg - 90f;
         aimIndicator.transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+
+    public async void TakeDamage(int damage, Vector2 aimDirection)
+    {
+        if (!isInvincible)
+        {
+            HP -= damage;
+
+            movementController.rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
+            movementController.canMove = false;
+            movementController.isSprinting = false;
+            movementController.isDashing = false;
+            movementController.isMoving = false;
+
+            await Task.Delay((int)(knockbackDuration * 1000));
+
+            movementController.rb.velocity = Vector2.zero;
+            movementController.canMove = true;
+
+            print(gameObject.name + " hit! Remaining HP: " + HP);
+        }
     }
 }

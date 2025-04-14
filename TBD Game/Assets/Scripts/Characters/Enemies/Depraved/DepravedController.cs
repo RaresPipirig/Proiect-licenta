@@ -5,12 +5,23 @@ using UnityEngine;
 
 public class DepravedController : MonoBehaviour
 {
-    public int HP;
+    [SerializeField] private int HP;
     Rigidbody2D rb;
 
-    public float knockbackForce;
-    public bool canMove = true;
-    public float knockbackDuration;
+    [SerializeField] private float knockbackForce;
+    [SerializeField] private float knockbackDuration;
+
+    [SerializeField] private bool canMove = true;
+    [SerializeField] private bool isMoving;
+    [SerializeField] private int moveSpeed;
+
+    [SerializeField] private bool isStunned;
+    [SerializeField] private float slashStunDuration;
+
+    Vector2 playerDirection = Vector2.zero;
+
+    [SerializeField] private int detectionRange;
+    [SerializeField] private LayerMask playerLayer;
 
     void Awake()
     {
@@ -19,7 +30,36 @@ public class DepravedController : MonoBehaviour
 
     void Update()
     {
-        
+        GetPlayerDirection();
+    }
+
+    private void FixedUpdate()
+    {
+        if (canMove)
+        {
+            Move();
+        }
+    }
+
+    private void Move()
+    {
+        rb.velocity = playerDirection * moveSpeed;
+    }
+
+    private void GetPlayerDirection()
+    {
+        Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRange, playerLayer);
+
+        if (hit != null)
+        {
+            playerDirection = (hit.transform.position - transform.position).normalized;
+            isMoving = true;
+        }
+        else
+        {
+            playerDirection = Vector2.zero;
+            isMoving = false;
+        }
     }
 
     public async void TakeDamage(int damage, Vector2 aimDirection)
@@ -28,8 +68,11 @@ public class DepravedController : MonoBehaviour
 
         rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
         canMove = false;
+        isMoving = false;
         await Task.Delay((int)(knockbackDuration * 1000));
         rb.velocity = Vector2.zero;
+        isStunned = true;
+        await Task.Delay((int)(slashStunDuration * 1000));
         canMove = true;
 
         print(gameObject.name + " hit! Remaining HP: " + HP);
