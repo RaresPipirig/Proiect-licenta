@@ -5,48 +5,30 @@ using Unity.VisualScripting;
 using UnityEngine;
 using Assets.Scripts.Characters.Main_characters.Swordsman;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
     public AttackController attackController;
-
-    public float moveSpeed;
-    public bool isMoving;
-
-    public float dashSpeed;
-    public bool isDashing;
-    private bool stopDash;
-    private float dashStartTime;
-    public float maxDashTime;
-    public float minDashTime;
-
-    public float sprintSpeed;
-    public bool isSprinting;
-    private bool canSprint;
-
-    public float dashCooldown;
-    public bool canDash = true;
-    public bool hasReleasedDash;
+    public MovementController movementController;
 
     private PlayerInput playerInput;
-    private Vector2 movementInput;
-    private Rigidbody2D rb;
-    internal Vector2 lastRecordedDirection = Vector2.down;
 
+    internal Transform aimIndicator;
     public LayerMask enemyLayer;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
         playerInput = new PlayerInput();
+        aimIndicator = GetComponent<Transform>().Find("aim_indicator");
     }
 
     private void OnEnable()
     {
-        playerInput.Player.Move.performed += ctx => movementInput = ctx.ReadValue<Vector2>().normalized;
-        playerInput.Player.Move.canceled += ctx => movementInput = Vector2.zero;
-        playerInput.Player.Dash.started += ctx => StartDash();
-        playerInput.Player.Dash.canceled += ctx => StopDash();
+        playerInput.Player.Move.performed += ctx => movementController.movementInput = ctx.ReadValue<Vector2>().normalized;
+        playerInput.Player.Move.canceled += ctx => movementController.movementInput = Vector2.zero;
+        playerInput.Player.Dash.started += ctx => movementController.StartDash();
+        playerInput.Player.Dash.canceled += ctx => movementController.StopDash();
         playerInput.Player.Aim.performed += ctx => attackController.aimInput = ctx.ReadValue<Vector2>().normalized;
         playerInput.Player.Aim.canceled += ctx => attackController.aimInput = Vector2.zero;
         playerInput.Player.SwordSlash.performed += ctx => attackController.SwordSlash();
@@ -62,83 +44,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-
+        AimIndicator();
     }
 
-    private async void StartDash()
+    private void AimIndicator()
     {
-        hasReleasedDash = false;
-        if (isDashing || !isMoving || !canDash) return;
-
-        isDashing = true;
-        canDash = false;
-        stopDash = false;
-        canSprint = true;
-        
-        dashStartTime = Time.time;
-
-        while (!stopDash && (Time.time - dashStartTime) < maxDashTime
-            || (Time.time - dashStartTime) < minDashTime)
-        {
-            await Task.Yield();
-        }
-
-        isDashing = false;
-        if (canSprint)
-        {
-            isSprinting = true;
-        }
-
-        await Task.Delay((int)(dashCooldown * 1000));
-        while (!hasReleasedDash) { await Task.Yield(); }
-        canDash = true;
-    }
-
-    private void StopDash()
-    {
-        if (isDashing)
-        {
-            canSprint = false;
-        }
-        stopDash = true;
-
-        hasReleasedDash = true;
-    }
-
-    private void FixedUpdate()
-    {
-        if (movementInput == Vector2.zero && !isDashing)
-        {
-            isMoving = false;
-            isSprinting = false;
-            rb.velocity = Vector2.zero;
-        }
-
-        Move(movementInput);
-    }
-
-    private void Move(Vector2 targetPos)
-    {
-        if (targetPos != Vector2.zero)
-        {
-            isMoving = true;
-            lastRecordedDirection = targetPos;
-        }
-
-        if (isMoving && !isDashing && !isSprinting)
-        {
-            rb.velocity = targetPos * moveSpeed;
-            return;
-        }else if(isSprinting && !isDashing)
-        {
-            rb.velocity = targetPos * sprintSpeed;
-            return;
-        }
-
-        if(targetPos == Vector2.zero)
-            targetPos = lastRecordedDirection;
-
-        if (isDashing)
-            rb.velocity = targetPos * dashSpeed;
+        float angle = Mathf.Atan2(attackController.aimDirection.y, attackController.aimDirection.x) * Mathf.Rad2Deg - 90f;
+        aimIndicator.transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 }

@@ -7,69 +7,70 @@ public class AttackController : MonoBehaviour
 {
     public PlayerController playerController;
     internal Vector2 aimInput;
+    internal Vector2 aimDirection = Vector2.down;
 
     public float swordSlashCooldown;
     public bool isSlashing;
     public bool canSlash;
-    public Transform attackPoint;
     public float slashAngle;
-    private float slashRange;
+    public float slashRange;
     public float slashDuration;
     public float sprintDelay;
     public int slashDamage;
-    private Vector2 slashDirection = Vector2.down;
 
     private void Awake()
     {
         Transform child = GetComponent<Transform>().Find("SwordHitbox");
-        slashRange = child.GetComponent<CircleCollider2D>().radius * GetComponent<Transform>().localScale.x;
     }
 
     void Update()
     {
-        
+        if (aimInput == Vector2.zero)
+        {
+            aimDirection = playerController.movementController.lastRecordedDirection;
+            playerController.aimIndicator.gameObject.SetActive(false);
+        }
+        else
+        {
+            aimDirection = aimInput;
+            if(!isSlashing)
+                playerController.aimIndicator.gameObject.SetActive(true);
+        }
     }
 
     internal async void SwordSlash()
     {
-        if (playerController.isDashing || !canSlash)
+        if (playerController.movementController.isDashing || !canSlash)
         {
             return;
         }
 
         isSlashing = true;
+        playerController.aimIndicator.gameObject.SetActive(false);
         canSlash = false;
 
-        if (playerController.isSprinting)
+        if (playerController.movementController.isDashing)
         {
-            playerController.isSprinting = false;
+            playerController.movementController.isDashing = false;
             await Task.Delay((int)(sprintDelay * 1000));
         }
 
-        if (aimInput == Vector2.zero)
-            slashDirection = playerController.lastRecordedDirection;
-        else
-        {
-            slashDirection = aimInput;
-        }
-        float angle = Mathf.Atan2(slashDirection.y, slashDirection.x) * Mathf.Rad2Deg;
-        attackPoint.rotation = Quaternion.Euler(0, 0, angle);
-
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackPoint.position.x, attackPoint.position.y + 0.1f), slashRange, playerController.enemyLayer);
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(transform.position.x, transform.position.y + 0.1f), slashRange, playerController.enemyLayer);
 
         foreach (Collider2D hit in hitEnemies)
         {
             Vector2 directionToEnemy = (hit.transform.position - transform.position).normalized;
-            float angleToEnemy = Vector2.Angle(slashDirection, directionToEnemy);
+            float angleToEnemy = Vector2.Angle(aimDirection, directionToEnemy);
 
             if (angleToEnemy <= slashAngle / 2)
             {
-                hit.transform.parent.GetComponent<DepravedController>()?.TakeDamage(slashDamage);
+                hit.transform.parent.GetComponent<DepravedController>()?.TakeDamage(slashDamage, aimDirection);
             }
         }
 
         await Task.Delay((int)(slashDuration * 1000));
         isSlashing = false;
+        playerController.aimIndicator.gameObject.SetActive(true);
         await Task.Delay((int)(swordSlashCooldown * 1000));
         canSlash = true;
     }

@@ -21,13 +21,18 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
         public RuntimeAnimatorController controller;
         public PlayerController playerController;
 
+        public Renderer aimRenderer;
+
         private void Awake()
         {
             //disable renderers of children so that we can swap between prefabs
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             foreach (Renderer renderer in renderers)
             {
-                renderer.enabled = false;
+                if (renderer != aimRenderer)
+                {
+                    renderer.enabled = false;
+                }
             }
 
             //initialize prefab and animator controller for default direction
@@ -44,6 +49,7 @@ namespace Assets.Scripts.Characters.Main_characters.Swordsman
             {
                 renderer.sortingLayerName = "Player";
             }
+
         }
 
         void Update()
