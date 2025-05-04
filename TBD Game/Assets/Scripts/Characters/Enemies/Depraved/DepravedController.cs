@@ -15,7 +15,7 @@ public class DepravedController : MonoBehaviour
     [SerializeField] private bool isMoving;
     [SerializeField] private int moveSpeed;
 
-    [SerializeField] private bool isStunned;
+    [SerializeField] private int isStunned = 0;
     [SerializeField] private float slashStunDuration;
 
     Vector2 playerDirection = Vector2.zero;
@@ -35,7 +35,7 @@ public class DepravedController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (canMove)
+        if (canMove && isStunned == 0)
         {
             Move();
         }
@@ -65,16 +65,16 @@ public class DepravedController : MonoBehaviour
     public async void TakeDamage(int damage, Vector2 aimDirection)
     {
         HP -= damage;
+        print(gameObject.name + " hit! Remaining HP: " + HP);
 
         rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
         canMove = false;
         isMoving = false;
         await Task.Delay((int)(knockbackDuration * 1000));
         rb.velocity = Vector2.zero;
-        isStunned = true;
+        isStunned += 1;
         await Task.Delay((int)(slashStunDuration * 1000));
+        isStunned -= 1;
         canMove = true;
-
-        print(gameObject.name + " hit! Remaining HP: " + HP);
     }
 }

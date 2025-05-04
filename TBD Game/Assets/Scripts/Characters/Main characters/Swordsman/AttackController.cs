@@ -18,6 +18,12 @@ public class AttackController : MonoBehaviour
     public float sprintDelay;
     public int slashDamage;
 
+    [SerializeField] private float dashDistance = 5f;
+    [SerializeField] private int dashDamage = 20;
+    [SerializeField] private Vector2 hitboxSize = new Vector2(1f, 1f);
+    [SerializeField] private bool canDashAttack = true;
+    [SerializeField] private float dashAttackCooldown = 5f;
+
     private void Awake()
     {
         Transform child = GetComponent<Transform>().Find("SwordHitbox");
@@ -73,5 +79,41 @@ public class AttackController : MonoBehaviour
         playerController.aimIndicator.gameObject.SetActive(true);
         await Task.Delay((int)(swordSlashCooldown * 1000));
         canSlash = true;
+    }
+
+    internal async void DashAttack()
+    {
+        if (!canDashAttack || playerController.movementController.canMove != 0)
+            return;
+
+        canDashAttack = false;
+
+        Vector2 start = transform.position;
+        Vector2 end = start + aimDirection.normalized * dashDistance;
+
+        Vector2 dashDirection = (end - start).normalized;
+        float distance = dashDistance;
+
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(
+            start,
+            hitboxSize,
+            Mathf.Atan2(dashDirection.y, dashDirection.x) * Mathf.Rad2Deg,
+            dashDirection,
+            distance,
+            playerController.enemyLayer
+        );
+
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider != null)
+            {
+                hit.collider.transform.parent.GetComponent<DepravedController>()?.TakeDamage(dashDamage, aimDirection);
+            }
+        }
+
+        transform.position = end;
+
+        await Task.Delay((int)(dashAttackCooldown * 1000));
+        canDashAttack = true;
     }
 }

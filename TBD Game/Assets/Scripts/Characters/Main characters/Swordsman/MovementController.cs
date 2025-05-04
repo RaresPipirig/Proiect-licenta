@@ -13,7 +13,7 @@ public class MovementController : MonoBehaviour
 
     public float moveSpeed;
     public bool isMoving;
-    public bool canMove = true;
+    public int canMove;
 
     public float dashSpeed;
     public bool isDashing;
@@ -44,7 +44,7 @@ public class MovementController : MonoBehaviour
             rb.velocity = Vector2.zero;
         }
 
-        if (canMove)
+        if (canMove == 0)
         {
             Move(movementInput);
         }

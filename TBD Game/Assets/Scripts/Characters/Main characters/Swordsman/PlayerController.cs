@@ -37,6 +37,7 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.Aim.performed += ctx => attackController.aimInput = ctx.ReadValue<Vector2>().normalized;
         playerInput.Player.Aim.canceled += ctx => attackController.aimInput = Vector2.zero;
         playerInput.Player.SwordSlash.performed += ctx => attackController.SwordSlash();
+        playerInput.Player.DashAttack.performed += ctx => attackController.DashAttack();
 
 
         playerInput.Enable();
@@ -65,7 +66,7 @@ public class PlayerController : MonoBehaviour
             HP -= damage;
 
             movementController.rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
-            movementController.canMove = false;
+            movementController.canMove += 1;
             movementController.isSprinting = false;
             movementController.isDashing = false;
             movementController.isMoving = false;
@@ -73,7 +74,7 @@ public class PlayerController : MonoBehaviour
             await Task.Delay((int)(knockbackDuration * 1000));
 
             movementController.rb.velocity = Vector2.zero;
-            movementController.canMove = true;
+            movementController.canMove -= 1;
 
             print(gameObject.name + " hit! Remaining HP: " + HP);
         }
