@@ -26,7 +26,7 @@ public class AttackController : MonoBehaviour
 
     private void Awake()
     {
-        Transform child = GetComponent<Transform>().Find("SwordHitbox");
+        
     }
 
     void Update()

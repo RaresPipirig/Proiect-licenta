@@ -37,7 +37,7 @@ public class MovementController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (movementInput == Vector2.zero && !isDashing)
+        if (movementInput == Vector2.zero && !isDashing && canMove == 0)
         {
             isMoving = false;
             isSprinting = false;

@@ -17,10 +17,10 @@ public class PlayerController : MonoBehaviour
     internal Transform aimIndicator;
     public LayerMask enemyLayer;
 
-    public int HP;
-    public bool isInvincible;
-    public float knockbackForce;
-    public float knockbackDuration;
+    [SerializeField] private int HP;
+    [SerializeField] internal bool isInvincible;
+    [SerializeField] private float knockbackForce;
+    [SerializeField] private float knockbackDuration;
 
     private void Awake()
     {
@@ -64,6 +64,7 @@ public class PlayerController : MonoBehaviour
         if (!isInvincible)
         {
             HP -= damage;
+            print(gameObject.name + " hit! Remaining HP: " + HP);
 
             movementController.rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
             movementController.canMove += 1;
@@ -75,8 +76,6 @@ public class PlayerController : MonoBehaviour
 
             movementController.rb.velocity = Vector2.zero;
             movementController.canMove -= 1;
-
-            print(gameObject.name + " hit! Remaining HP: " + HP);
         }
     }
 }
