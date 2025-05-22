@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -44,6 +45,13 @@ public class AttackController : MonoBehaviour
         }
     }
 
+    private void Attack(Collider2D hit, int damage)
+    {
+        hit.transform.parent.GetComponent<DepravedController>()?.TakeDamage(damage, aimDirection);
+        hit.transform.parent.GetComponent<MageController>()?.TakeDamage(damage, aimDirection);
+        hit.transform.parent.GetComponent<FireballController>()?.TakeDamage();
+    }
+
     internal async void SwordSlash()
     {
         if (playerController.movementController.isDashing || !canSlash)
@@ -70,7 +78,7 @@ public class AttackController : MonoBehaviour
 
             if (angleToEnemy <= slashAngle / 2)
             {
-                hit.transform.parent.GetComponent<DepravedController>()?.TakeDamage(slashDamage, aimDirection);
+                Attack(hit, slashDamage);
             }
         }
 
@@ -107,7 +115,7 @@ public class AttackController : MonoBehaviour
         {
             if (hit.collider != null)
             {
-                hit.collider.transform.parent.GetComponent<DepravedController>()?.TakeDamage(dashDamage, aimDirection);
+                Attack(hit.collider, dashDamage);
             }
         }
 

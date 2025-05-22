@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class DepravedController : MonoBehaviour
+public class MageController : MonoBehaviour
 {
     [SerializeField] private int HP;
     Rigidbody2D rb;
@@ -12,7 +12,7 @@ public class DepravedController : MonoBehaviour
     [SerializeField] private float knockbackDuration;
 
     [SerializeField] private bool canMove = true;
-    [SerializeField] private int moveSpeed;
+    [SerializeField] private float moveSpeed;
 
     [SerializeField] private int isStunned = 0;
     [SerializeField] private float slashStunDuration;
@@ -21,17 +21,20 @@ public class DepravedController : MonoBehaviour
 
     [SerializeField] private int detectionRange;
     [SerializeField] private float tooCloseRange;
+    [SerializeField] private float tooFarRange;
     [SerializeField] private LayerMask playerLayer;
+    Collider2D close;
+    Collider2D far;
 
-    [SerializeField] private bool canAttack = true;
-    [SerializeField] private bool isAttacking = false;
-    [SerializeField] private float attackRange;
-    [SerializeField] private float attackInitiationRange;
+    [SerializeField] private bool isAttacking;
+    [SerializeField] private bool canAttack;
+    private Transform attackIndicator;
     [SerializeField] private float attackDelay;
     [SerializeField] private float attackDuration;
-    [SerializeField] private float attackCooldown;
-    [SerializeField] private int attackDamage;
-    private Transform attackIndicator;
+
+    [SerializeField] private float fireballCooldown;
+    [SerializeField] private GameObject fireballPrefab;
+    Vector2 spawnOffset = new Vector2(0f, 1f);
 
     void Awake()
     {
@@ -42,13 +45,13 @@ public class DepravedController : MonoBehaviour
     void Update()
     {
         GetPlayerDirection();
+
+        if (canAttack && far != null)
+            HitPlayer();
     }
 
     private void FixedUpdate()
     {
-        if (canAttack && isCloseEnoughToPlayer() && isStunned == 0)
-            HitPlayer();
-
         if (canMove && isStunned == 0)
         {
             Move();
@@ -57,10 +60,13 @@ public class DepravedController : MonoBehaviour
 
     private void Move()
     {
-        Collider2D close = Physics2D.OverlapCircle(transform.position, tooCloseRange, playerLayer);
+        close = Physics2D.OverlapCircle(transform.position, tooCloseRange, playerLayer);
+        far = Physics2D.OverlapCircle(transform.position, tooFarRange, playerLayer);
 
-        if (!isAttacking && close == null)
+        if (!isAttacking && far == null)
             rb.velocity = playerDirection * moveSpeed;
+        else if(!isAttacking && close != null)
+            rb.velocity = -playerDirection * moveSpeed;
         else
             rb.velocity = Vector2.zero;
     }
@@ -79,17 +85,13 @@ public class DepravedController : MonoBehaviour
         }
     }
 
-    private bool isCloseEnoughToPlayer()
-    {
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, attackInitiationRange, playerLayer);
-
-        return hit != null;
-    }
-
     public async void TakeDamage(int damage, Vector2 aimDirection)
     {
         HP -= damage;
         print(gameObject.name + " hit! Remaining HP: " + HP);
+
+        if (HP <= 0)
+            Destroy(gameObject);
 
         rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
         canMove = false;
@@ -103,29 +105,36 @@ public class DepravedController : MonoBehaviour
 
     public async void HitPlayer()
     {
-        if (!canAttack)
+        if (!canAttack || isStunned != 0)
         {
             return;
         }
 
         canAttack = false;
         isAttacking = true;
-        
+
         rb.velocity = Vector2.zero;
         attackIndicator.gameObject.SetActive(true);
         await Task.Delay((int)(attackDelay * 1000));
         attackIndicator.gameObject.SetActive(false);
 
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, attackRange, playerLayer);
-        if (hit != null)
+        if (isStunned != 0)
         {
-            hit.transform.parent.GetComponent<PlayerController>()?.TakeDamage(attackDamage, playerDirection);
+            isAttacking = false;
+            canAttack = true;
+            return;
         }
+
+        GameObject fireball = Instantiate(fireballPrefab, 
+            (Vector2)transform.position + spawnOffset + playerDirection * 1f, 
+            Quaternion.identity);
+        FireballController controller = fireball.GetComponent<FireballController>();
+        controller.Initialize(playerDirection);
 
         await Task.Delay((int)(attackDuration * 1000));
         isAttacking = false;
 
-        await Task.Delay ((int)(attackCooldown * 1000));
+        await Task.Delay((int)(fireballCooldown * 1000));
         canAttack = true;
     }
 }

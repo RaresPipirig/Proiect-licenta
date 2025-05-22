@@ -180,7 +180,7 @@ GameObject:
   - component: {fileID: 1613028711029124009}
   - component: {fileID: 4887957091357103636}
   m_Layer: 6
-  m_Name: Depraved
+  m_Name: Depraved 0.1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
