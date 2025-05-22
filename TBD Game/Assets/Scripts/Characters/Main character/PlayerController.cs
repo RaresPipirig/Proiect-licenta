@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
 {
     public AttackController attackController;
     public MovementController movementController;
+    public StaminaSystem system;
 
     private PlayerInput playerInput;
 
@@ -76,6 +77,32 @@ public class PlayerController : MonoBehaviour
 
             movementController.rb.velocity = Vector2.zero;
             movementController.canMove -= 1;
+        }
+    }
+
+    public void Upgrade(string path)
+    {
+        switch (path)
+        {
+            case "HP":
+                HP *= 120 / 100;
+                break;
+            case "Stamina":
+                system.maxStamina *= 1.2f;
+                system.recoveryRate *= 1.1f;
+                break;
+            case "Damage":
+                attackController.slashDamage *= 125 / 100;
+                attackController.dashDamage *= 125 / 100;
+                break;
+            case "Movement":
+                movementController.moveSpeed *= 1.15f;
+                movementController.dashSpeed *= 1.15f;
+                movementController.sprintSpeed *= 1.15f;
+                break;
+            default:
+                print("Wrong argument");
+                break;
         }
     }
 }

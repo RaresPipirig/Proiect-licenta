@@ -27,6 +27,7 @@ public class MovementController : MonoBehaviour
     private bool canSprint;
 
     public float dashCooldown;
+    public float dashStaminaCost;
     public bool canDash = true;
     public bool hasReleasedDash;
 
@@ -53,7 +54,7 @@ public class MovementController : MonoBehaviour
     internal async void StartDash()
     {
         hasReleasedDash = false;
-        if (isDashing || !isMoving || !canDash) return;
+        if (isDashing || !isMoving || !canDash || playerController.system.UseStamina(dashStaminaCost)) return;
 
         isDashing = true;
         canDash = false;

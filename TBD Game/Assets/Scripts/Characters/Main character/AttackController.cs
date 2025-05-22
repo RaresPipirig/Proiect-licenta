@@ -18,12 +18,14 @@ public class AttackController : MonoBehaviour
     public float slashDuration;
     public float sprintDelay;
     public int slashDamage;
+    public float slashStaminaCost;
 
     [SerializeField] private float dashDistance = 5f;
-    [SerializeField] private int dashDamage = 20;
+    [SerializeField] internal int dashDamage = 20;
     [SerializeField] private Vector2 hitboxSize = new Vector2(1f, 1f);
     [SerializeField] private bool canDashAttack = true;
     [SerializeField] private float dashAttackCooldown = 5f;
+    [SerializeField] private float dashStaminaCost;
 
     private void Awake()
     {
@@ -54,7 +56,9 @@ public class AttackController : MonoBehaviour
 
     internal async void SwordSlash()
     {
-        if (playerController.movementController.isDashing || !canSlash)
+        if (playerController.movementController.isDashing 
+            || !canSlash 
+            || !playerController.system.UseStamina(slashStaminaCost))
         {
             return;
         }
@@ -91,7 +95,9 @@ public class AttackController : MonoBehaviour
 
     internal async void DashAttack()
     {
-        if (!canDashAttack || playerController.movementController.canMove != 0)
+        if (!canDashAttack 
+            || playerController.movementController.canMove != 0
+            || !playerController.system.UseStamina(dashStaminaCost))
             return;
 
         canDashAttack = false;
