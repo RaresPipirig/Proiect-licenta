@@ -9,14 +9,14 @@ using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
-    public AttackController attackController;
-    public MovementController movementController;
-    public StaminaSystem system;
+    [SerializeField] private AttackController attackController;
+    [SerializeField] internal MovementController movementController;
+    [SerializeField] internal StaminaSystem system;
 
     private PlayerInput playerInput;
 
     internal Transform aimIndicator;
-    public LayerMask enemyLayer;
+    [SerializeField] internal LayerMask enemyLayer;
 
     [SerializeField] private int HP;
     [SerializeField] internal bool isInvincible;

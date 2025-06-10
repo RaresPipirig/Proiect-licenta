@@ -6,19 +6,19 @@ using UnityEngine;
 
 public class AttackController : MonoBehaviour
 {
-    public PlayerController playerController;
+    [SerializeField] private PlayerController playerController;
     internal Vector2 aimInput;
     internal Vector2 aimDirection = Vector2.down;
 
-    public float swordSlashCooldown;
-    public bool isSlashing;
-    public bool canSlash;
-    public float slashAngle;
-    public float slashRange;
-    public float slashDuration;
-    public float sprintDelay;
-    public int slashDamage;
-    public float slashStaminaCost;
+    [SerializeField] private float swordSlashCooldown;
+    [SerializeField] private bool isSlashing;
+    [SerializeField] private bool canSlash;
+    [SerializeField] private float slashAngle;
+    [SerializeField] private float slashRange;
+    [SerializeField] private float slashDuration;
+    [SerializeField] private float sprintDelay;
+    [SerializeField] internal int slashDamage;
+    [SerializeField] private float slashStaminaCost;
 
     [SerializeField] private float dashDistance = 5f;
     [SerializeField] internal int dashDamage = 20;

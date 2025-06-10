@@ -5,31 +5,31 @@ using UnityEngine;
 
 public class MovementController : MonoBehaviour
 {
-    public PlayerController playerController;
+    [SerializeField] private PlayerController playerController;
 
     internal Vector2 movementInput;
-    public Rigidbody2D rb;
+    [SerializeField] internal Rigidbody2D rb;
     internal Vector2 lastRecordedDirection = Vector2.down;
 
-    public float moveSpeed;
-    public bool isMoving;
-    public int canMove;
+    [SerializeField] internal float moveSpeed;
+    [SerializeField] internal bool isMoving;
+    [SerializeField] internal int canMove;
 
-    public float dashSpeed;
-    public bool isDashing;
+    [SerializeField] internal float dashSpeed;
+    [SerializeField] internal bool isDashing;
     private bool stopDash;
     private float dashStartTime;
-    public float maxDashTime;
-    public float minDashTime;
+    [SerializeField] private float maxDashTime;
+    [SerializeField] private float minDashTime;
 
-    public float sprintSpeed;
-    public bool isSprinting;
+    [SerializeField] internal float sprintSpeed;
+    [SerializeField] internal bool isSprinting;
     private bool canSprint;
 
-    public float dashCooldown;
-    public float dashStaminaCost;
-    public bool canDash = true;
-    public bool hasReleasedDash;
+    [SerializeField] private float dashCooldown;
+    [SerializeField] private float dashStaminaCost;
+    [SerializeField] private bool canDash = true;
+    [SerializeField] private bool hasReleasedDash;
 
     private void Awake()
     {
