@@ -140,7 +140,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxStamina: 100
-  recoveryRate: 25
+  recoveryRate: 30
   recoveryDelay: 1
   currentStamina: 0
   recoveryCooldown: 0
