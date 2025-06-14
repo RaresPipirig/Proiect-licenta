@@ -10,9 +10,10 @@ public class AttackController : MonoBehaviour
     internal Vector2 aimInput;
     internal Vector2 aimDirection = Vector2.down;
 
+    [Space]
+
+    [Header("Sword Slash Settings")]
     [SerializeField] private float swordSlashCooldown;
-    [SerializeField] private bool isSlashing;
-    [SerializeField] private bool canSlash;
     [SerializeField] private float slashAngle;
     [SerializeField] private float slashRange;
     [SerializeField] private float slashDuration;
@@ -20,12 +21,21 @@ public class AttackController : MonoBehaviour
     [SerializeField] internal int slashDamage;
     [SerializeField] private float slashStaminaCost;
 
+    [Space]
+
+    [Header("Dash Attack Settings")]
     [SerializeField] private float dashDistance = 5f;
     [SerializeField] internal int dashDamage = 20;
     [SerializeField] private Vector2 hitboxSize = new Vector2(1f, 1f);
-    [SerializeField] private bool canDashAttack = true;
     [SerializeField] private float dashAttackCooldown = 5f;
     [SerializeField] private float dashStaminaCost;
+
+    [Space]
+
+    [Header("Debug")]
+    [SerializeField] private bool isSlashing;
+    [SerializeField] private bool canSlash;
+    [SerializeField] private bool canDashAttack = true;
 
     private void Awake()
     {

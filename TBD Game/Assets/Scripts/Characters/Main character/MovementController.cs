@@ -11,25 +11,37 @@ public class MovementController : MonoBehaviour
     [SerializeField] internal Rigidbody2D rb;
     internal Vector2 lastRecordedDirection = Vector2.down;
 
-    [SerializeField] internal float moveSpeed;
-    [SerializeField] internal bool isMoving;
-    [SerializeField] internal int canMove;
+    [Space]
 
+    [Header("Walk Settings")]
+    [SerializeField] internal float moveSpeed;
+
+    [Space]
+
+    [Header("Dash Settings")]
     [SerializeField] internal float dashSpeed;
-    [SerializeField] internal bool isDashing;
     private bool stopDash;
     private float dashStartTime;
     [SerializeField] private float maxDashTime;
     [SerializeField] private float minDashTime;
-
-    [SerializeField] internal float sprintSpeed;
-    [SerializeField] internal bool isSprinting;
-    private bool canSprint;
-
     [SerializeField] private float dashCooldown;
     [SerializeField] private float dashStaminaCost;
+
+    [Space]
+
+    [Header("Sprint Settings")]
+    [SerializeField] internal float sprintSpeed;
+    [SerializeField] internal bool isSprinting;
+
+    [Space]
+
+    [Header("Debug")]
+    [SerializeField] internal bool isMoving;
+    [SerializeField] internal int canMove;
+    private bool canSprint;
     [SerializeField] private bool canDash = true;
     [SerializeField] private bool hasReleasedDash;
+    [SerializeField] internal bool isDashing;
 
     private void Awake()
     {

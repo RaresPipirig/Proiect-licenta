@@ -18,10 +18,17 @@ public class PlayerController : MonoBehaviour
     internal Transform aimIndicator;
     [SerializeField] internal LayerMask enemyLayer;
 
-    [SerializeField] private int HP;
-    [SerializeField] internal bool isInvincible;
+    [Space]
+
+    [Header("Knockback Settings")]
     [SerializeField] private float knockbackForce;
     [SerializeField] private float knockbackDuration;
+
+    [Space]
+
+    [Header("Debug")]
+    [SerializeField] private int HP;
+    [SerializeField] internal bool isInvincible;
 
     private void Awake()
     {

@@ -4,12 +4,16 @@ using UnityEngine;
 
 public class StaminaSystem : MonoBehaviour
 {
+    [Header("Stamina Settings")]
     [SerializeField] internal float maxStamina;
     [SerializeField] internal float recoveryRate;
     [SerializeField] private float recoveryDelay;
-
-    [SerializeField] private float currentStamina;
     [SerializeField] private float recoveryCooldown;
+
+    [Space]
+
+    [Header("Debug")]
+    [SerializeField] private float currentStamina;
 
     void Awake()
     {
