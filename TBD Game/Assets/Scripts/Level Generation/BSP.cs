@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class BSP : MonoBehaviour
@@ -9,21 +11,64 @@ public class BSP : MonoBehaviour
     public int mapHeight = 64;
     public int minRoomSize = 6;
     public int maxLeafSize = 20;
-    public int maxIterations = 5;
+    public int maxIterations = 3;
+
+    public int level = 1;
 
     private List<Leaf> leaves = new List<Leaf>();
 
     void Start()
     {
-        GenerateDungeon();
+        //generate level 1 on start
+        GenerateDungeon(24, 24, 2);
+        Debug();
     }
 
-    void GenerateDungeon()
+    void Debug()
     {
+        char[,] matrix = new char[mapWidth, mapHeight];
+
+        for (int i = 0; i < mapWidth; i++)
+            for (int j = 0; j < mapHeight; j++)
+                matrix[i, j] = 'O';
+
+        foreach(Leaf l in leaves)
+        {
+            if (l.leftChild == null && l.rightChild == null)
+            {
+                for (int i = (int)l.room.x; i < (int)l.room.x + l.room.width; i++)
+                    for (int j = (int)l.room.y; j < (int)l.room.y + l.room.height; j++)
+                        matrix[i, j] = '#';
+            }
+        }
+
+        string path = "Assets/Scripts/debug.txt";
+
+        using (StreamWriter writer = new StreamWriter(path))
+        {
+            for (int i = 0; i < mapWidth; i++)
+            {
+                for (int j = 0; j < mapHeight; j++)
+                {
+                    writer.Write(matrix[i, j]);
+                }
+                writer.WriteLine();
+            }
+        }
+
+        print("Matrix written to file.");
+
+    }
+
+    void GenerateDungeon(int width, int height, int numberOfIterations)
+    {
+        mapWidth = width;
+        mapHeight = height;
+        maxIterations = numberOfIterations;
+
         Leaf root = new Leaf(0, 0, mapWidth, mapHeight);
         leaves.Add(root);
 
-        // Split until all leaves are below the size or reach max iterations
         bool didSplit = true;
         int iterations = 0;
 
@@ -50,32 +95,12 @@ public class BSP : MonoBehaviour
             iterations++;
         }
 
-        // Create rooms in all leaf nodes
         foreach (Leaf l in leaves)
         {
             l.CreateRoom();
         }
     }
 
-    // Draw the rooms with Gizmos
-    void OnDrawGizmos()
-    {
-        if (leaves == null) return;
-
-        Gizmos.color = Color.green;
-        foreach (Leaf l in leaves)
-        {
-            if (l.room != Rect.zero)
-            {
-                Gizmos.DrawWireCube(
-                    new Vector3(l.room.x + l.room.width / 2, 0, l.room.y + l.room.height / 2),
-                    new Vector3(l.room.width, 0.1f, l.room.height)
-                );
-            }
-        }
-    }
-
-    // ---------- BSP Leaf Node ----------
     public class Leaf
     {
         public int x, y, width, height;
@@ -90,7 +115,7 @@ public class BSP : MonoBehaviour
 
         public bool Split(int minRoomSize)
         {
-            bool splitH = Random.Range(0f, 1f) > 0.5f;
+            bool splitH = UnityEngine.Random.Range(0f, 1f) > 0.5f;
 
             if (width > height && width / height >= 1.25f)
                 splitH = false;
@@ -101,7 +126,7 @@ public class BSP : MonoBehaviour
             if (max <= minRoomSize)
                 return false;
 
-            int split = Random.Range(minRoomSize, max);
+            int split = UnityEngine.Random.Range(minRoomSize, max);
 
             if (splitH)
             {
@@ -125,10 +150,10 @@ public class BSP : MonoBehaviour
             }
             else
             {
-                int roomWidth = Random.Range(3, width - 2);
-                int roomHeight = Random.Range(3, height - 2);
-                int roomX = x + Random.Range(1, width - roomWidth - 1);
-                int roomY = y + Random.Range(1, height - roomHeight - 1);
+                int roomWidth = UnityEngine.Random.Range(3, width - 2);
+                int roomHeight = UnityEngine.Random.Range(3, height - 2);
+                int roomX = x + UnityEngine.Random.Range(1, width - roomWidth - 1);
+                int roomY = y + UnityEngine.Random.Range(1, height - roomHeight - 1);
 
                 room = new Rect(roomX, roomY, roomWidth, roomHeight);
             }
