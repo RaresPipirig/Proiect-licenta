@@ -14,34 +14,19 @@ public class BSP : MonoBehaviour
     public int maxIterations = 3;
 
     public int level = 1;
+    char[,] matrix;
 
     private List<Leaf> leaves = new List<Leaf>();
 
     void Start()
     {
         //generate level 1 on start
-        GenerateDungeon(24, 24, 2);
+        GenerateDungeon(32, 32, 3, 8);
         Debug();
     }
 
     void Debug()
     {
-        char[,] matrix = new char[mapWidth, mapHeight];
-
-        for (int i = 0; i < mapWidth; i++)
-            for (int j = 0; j < mapHeight; j++)
-                matrix[i, j] = 'O';
-
-        foreach(Leaf l in leaves)
-        {
-            if (l.leftChild == null && l.rightChild == null)
-            {
-                for (int i = (int)l.room.x; i < (int)l.room.x + l.room.width; i++)
-                    for (int j = (int)l.room.y; j < (int)l.room.y + l.room.height; j++)
-                        matrix[i, j] = '#';
-            }
-        }
-
         string path = "Assets/Scripts/debug.txt";
 
         using (StreamWriter writer = new StreamWriter(path))
@@ -50,21 +35,89 @@ public class BSP : MonoBehaviour
             {
                 for (int j = 0; j < mapHeight; j++)
                 {
+                    writer.Write(' ');
                     writer.Write(matrix[i, j]);
+                    writer.Write(' ');
                 }
                 writer.WriteLine();
             }
         }
 
         print("Matrix written to file.");
-
     }
 
-    void GenerateDungeon(int width, int height, int numberOfIterations)
+    void GenerateDungeon(int width, int height, int numberOfIterations, int maxSplits)
     {
         mapWidth = width;
         mapHeight = height;
         maxIterations = numberOfIterations;
+
+        CreateSplits(maxSplits);
+
+        foreach (Leaf l in leaves)
+        {
+            l.CreateRoom();
+        }
+
+        WriteToMatrix();
+
+        CreateRoads();
+    }
+
+    void CreateRoads()
+    {
+        foreach (Leaf l in leaves)
+        {
+            if (!(l.leftChild == null && l.rightChild == null))
+                CreateCorridor(l);
+        }
+    }
+
+    Rect? GetRandomRoom(Leaf node)
+    {
+        if (node.room != Rect.zero)
+            return node.room;
+
+        List<Rect> foundRooms = new List<Rect>();
+        if (node.leftChild != null)
+        {
+            var leftRoom = GetRandomRoom(node.leftChild);
+            if (leftRoom != null) foundRooms.Add(leftRoom.Value);
+        }
+        if (node.rightChild != null)
+        {
+            var rightRoom = GetRandomRoom(node.rightChild);
+            if (rightRoom != null) foundRooms.Add(rightRoom.Value);
+        }
+
+        if (foundRooms.Count > 0)
+            return foundRooms[UnityEngine.Random.Range(0, foundRooms.Count)];
+
+        return null;
+    }
+
+    void WriteToMatrix()
+    {
+        matrix = new char[mapWidth, mapHeight];
+
+        for (int i = 0; i < mapWidth; i++)
+            for (int j = 0; j < mapHeight; j++)
+                matrix[i, j] = '.';
+
+        foreach (Leaf l in leaves)
+        {
+            if (l.leftChild == null && l.rightChild == null)
+            {
+                for (int i = (int)l.room.x; i < (int)l.room.x + l.room.width; i++)
+                    for (int j = (int)l.room.y; j < (int)l.room.y + l.room.height; j++)
+                        matrix[i, j] = '#';
+            }
+        }
+    }
+
+    void CreateSplits(int maxSplits)
+    {
+        int splits = 0;
 
         Leaf root = new Leaf(0, 0, mapWidth, mapHeight);
         leaves.Add(root);
@@ -72,12 +125,15 @@ public class BSP : MonoBehaviour
         bool didSplit = true;
         int iterations = 0;
 
-        while (didSplit && iterations < maxIterations)
+        while (didSplit && iterations < maxIterations && splits < maxSplits)
         {
             didSplit = false;
             List<Leaf> newLeaves = new List<Leaf>();
             foreach (Leaf l in leaves)
             {
+                if (splits >= maxSplits)
+                    break;
+
                 if (l.leftChild == null && l.rightChild == null)
                 {
                     if (l.width > maxLeafSize || l.height > maxLeafSize)
@@ -87,17 +143,13 @@ public class BSP : MonoBehaviour
                             newLeaves.Add(l.leftChild);
                             newLeaves.Add(l.rightChild);
                             didSplit = true;
+                            splits++;
                         }
                     }
                 }
             }
             leaves.AddRange(newLeaves);
             iterations++;
-        }
-
-        foreach (Leaf l in leaves)
-        {
-            l.CreateRoom();
         }
     }
 
@@ -106,6 +158,7 @@ public class BSP : MonoBehaviour
         public int x, y, width, height;
         public Leaf leftChild, rightChild;
         public Rect room = Rect.zero;
+        public List<Vector2Int> doorPositions = new List<Vector2Int>();
 
         public Leaf(int x, int y, int width, int height)
         {
@@ -158,5 +211,360 @@ public class BSP : MonoBehaviour
                 room = new Rect(roomX, roomY, roomWidth, roomHeight);
             }
         }
+    }
+
+
+    void CreateCorridor(Leaf l)
+    {
+        List<Rect> leftRooms = GetAllRooms(l.leftChild);
+        List<Rect> rightRooms = GetAllRooms(l.rightChild);
+
+        if (leftRooms.Count == 0 || rightRooms.Count == 0)
+            return;
+
+        // Try to find a pair of rooms that can be connected
+        bool connectionMade = false;
+        int maxAttempts = leftRooms.Count * rightRooms.Count;
+        int attempts = 0;
+
+        while (!connectionMade && attempts < maxAttempts)
+        {
+            Rect leftRoom = leftRooms[UnityEngine.Random.Range(0, leftRooms.Count)];
+            Rect rightRoom = rightRooms[UnityEngine.Random.Range(0, rightRooms.Count)];
+
+            if (CanConnectRooms(leftRoom, rightRoom))
+            {
+                ConnectRooms(leftRoom, rightRoom);
+                connectionMade = true;
+            }
+            attempts++;
+        }
+
+        if (!connectionMade)
+        {
+            print("Could not find connectable rooms after " + maxAttempts + " attempts");
+            // Fall back to connecting any two rooms with L-shaped corridor
+            Rect leftRoom = leftRooms[UnityEngine.Random.Range(0, leftRooms.Count)];
+            Rect rightRoom = rightRooms[UnityEngine.Random.Range(0, rightRooms.Count)];
+            DrawLShapedCorridor(leftRoom, rightRoom);
+        }
+    }
+
+    List<Rect> GetAllRooms(Leaf node)
+    {
+        List<Rect> rooms = new List<Rect>();
+
+        if (node == null)
+            return rooms;
+
+        if (node.room != Rect.zero)
+        {
+            rooms.Add(node.room);
+        }
+        else
+        {
+            if (node.leftChild != null)
+                rooms.AddRange(GetAllRooms(node.leftChild));
+            if (node.rightChild != null)
+                rooms.AddRange(GetAllRooms(node.rightChild));
+        }
+
+        return rooms;
+    }
+
+    bool CanConnectRooms(Rect room1, Rect room2)
+    {
+        // Check if rooms can be connected with a straight corridor
+        return CanConnectStraight(room1, room2) || HasClearPath(room1, room2);
+    }
+
+    bool CanConnectStraight(Rect room1, Rect room2)
+    {
+        // Check for horizontal alignment (vertical overlap)
+        if (room1.yMax >= room2.y && room1.y <= room2.yMax)
+        {
+            // Check if there's a clear horizontal path
+            int minY = Mathf.Max((int)room1.y, (int)room2.y);
+            int maxY = Mathf.Min((int)room1.yMax - 1, (int)room2.yMax - 1);
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                int startX = room1.x < room2.x ? (int)room1.xMax : (int)room2.xMax;
+                int endX = room1.x < room2.x ? (int)room2.x - 1 : (int)room1.x - 1;
+
+                if (IsClearPath(startX, y, endX, y))
+                    return true;
+            }
+        }
+
+        // Check for vertical alignment (horizontal overlap)
+        if (room1.xMax >= room2.x && room1.x <= room2.xMax)
+        {
+            // Check if there's a clear vertical path
+            int minX = Mathf.Max((int)room1.x, (int)room2.x);
+            int maxX = Mathf.Min((int)room1.xMax - 1, (int)room2.xMax - 1);
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                int startY = room1.y < room2.y ? (int)room1.yMax : (int)room2.yMax;
+                int endY = room1.y < room2.y ? (int)room2.y - 1 : (int)room1.y - 1;
+
+                if (IsClearPath(x, startY, x, endY))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool HasClearPath(Rect room1, Rect room2)
+    {
+        // For L-shaped corridors, check if we can create a clear L-path
+        // This is a simplified check - you might want to make it more sophisticated
+
+        Vector2Int point1 = GetBestConnectionPoint(room1, room2);
+        Vector2Int point2 = GetBestConnectionPoint(room2, room1);
+
+        // Check both possible L-shapes
+        bool horizontalFirstClear = IsClearPath(point1.x, point1.y, point2.x, point1.y) &&
+                                   IsClearPath(point2.x, point1.y, point2.x, point2.y);
+
+        bool verticalFirstClear = IsClearPath(point1.x, point1.y, point1.x, point2.y) &&
+                                 IsClearPath(point1.x, point2.y, point2.x, point2.y);
+
+        return horizontalFirstClear || verticalFirstClear;
+    }
+
+    bool IsClearPath(int x1, int y1, int x2, int y2)
+    {
+        if (x1 == x2)
+        {
+            // Vertical path
+            int minY = Mathf.Min(y1, y2);
+            int maxY = Mathf.Max(y1, y2);
+            for (int y = minY; y <= maxY; y++)
+            {
+                if (!IsValidCorridorPosition(x1, y))
+                    return false;
+            }
+        }
+        else if (y1 == y2)
+        {
+            // Horizontal path
+            int minX = Mathf.Min(x1, x2);
+            int maxX = Mathf.Max(x1, x2);
+            for (int x = minX; x <= maxX; x++)
+            {
+                if (!IsValidCorridorPosition(x, y1))
+                    return false;
+            }
+        }
+        else
+        {
+            return false; // Not a straight line
+        }
+
+        return true;
+    }
+
+    void ConnectRooms(Rect room1, Rect room2)
+    {
+        if (CanConnectStraight(room1, room2))
+        {
+            DrawStraightCorridorBetweenRooms(room1, room2);
+        }
+        else
+        {
+            DrawLShapedCorridor(room1, room2);
+        }
+    }
+
+    void AddDoorToRoom(Rect room, Vector2Int doorPosition)
+    {
+        // Find the leaf that contains this room and add the door position
+        foreach (Leaf leaf in leaves)
+        {
+            if (leaf.room == room)
+            {
+                leaf.doorPositions.Add(doorPosition);
+                break;
+            }
+        }
+    }
+
+    void DrawStraightCorridorBetweenRooms(Rect room1, Rect room2)
+    {
+        // Check for horizontal connection
+        if (room1.yMax >= room2.y && room1.y <= room2.yMax)
+        {
+            int minY = Mathf.Max((int)room1.y, (int)room2.y);
+            int maxY = Mathf.Min((int)room1.yMax - 1, (int)room2.yMax - 1);
+            int corridorY = UnityEngine.Random.Range(minY, maxY + 1);
+
+            Vector2Int startPoint, endPoint;
+            Vector2Int door1, door2;
+
+            if (room1.x < room2.x)
+            {
+                startPoint = new Vector2Int((int)room1.xMax, corridorY);
+                endPoint = new Vector2Int((int)room2.x - 1, corridorY);
+                door1 = new Vector2Int((int)room1.xMax - 1, corridorY); // Door on room1's right edge
+                door2 = new Vector2Int((int)room2.x, corridorY); // Door on room2's left edge
+            }
+            else
+            {
+                startPoint = new Vector2Int((int)room1.x - 1, corridorY);
+                endPoint = new Vector2Int((int)room2.xMax, corridorY);
+                door1 = new Vector2Int((int)room1.x, corridorY); // Door on room1's left edge
+                door2 = new Vector2Int((int)room2.xMax - 1, corridorY); // Door on room2's right edge
+            }
+
+            AddDoorToRoom(room1, door1);
+            AddDoorToRoom(room2, door2);
+            DrawStraightCorridor(startPoint, endPoint);
+        }
+        // Check for vertical connection
+        else if (room1.xMax >= room2.x && room1.x <= room2.xMax)
+        {
+            int minX = Mathf.Max((int)room1.x, (int)room2.x);
+            int maxX = Mathf.Min((int)room1.xMax - 1, (int)room2.xMax - 1);
+            int corridorX = UnityEngine.Random.Range(minX, maxX + 1);
+
+            Vector2Int startPoint, endPoint;
+            Vector2Int door1, door2;
+
+            if (room1.y < room2.y)
+            {
+                startPoint = new Vector2Int(corridorX, (int)room1.yMax);
+                endPoint = new Vector2Int(corridorX, (int)room2.y - 1);
+                door1 = new Vector2Int(corridorX, (int)room1.yMax - 1); // Door on room1's top edge
+                door2 = new Vector2Int(corridorX, (int)room2.y); // Door on room2's bottom edge
+            }
+            else
+            {
+                startPoint = new Vector2Int(corridorX, (int)room1.y - 1);
+                endPoint = new Vector2Int(corridorX, (int)room2.yMax);
+                door1 = new Vector2Int(corridorX, (int)room1.y); // Door on room1's bottom edge
+                door2 = new Vector2Int(corridorX, (int)room2.yMax - 1); // Door on room2's top edge
+            }
+
+            AddDoorToRoom(room1, door1);
+            AddDoorToRoom(room2, door2);
+            DrawStraightCorridor(startPoint, endPoint);
+        }
+    }
+
+    void DrawStraightCorridor(Vector2Int start, Vector2Int end)
+    {
+        if (start.x == end.x)
+        {
+            // Vertical corridor
+            int minY = Mathf.Min(start.y, end.y);
+            int maxY = Mathf.Max(start.y, end.y);
+            for (int y = minY; y <= maxY; y++)
+            {
+                if (IsValidCorridorPosition(start.x, y))
+                    matrix[start.x, y] = '+';
+            }
+        }
+        else if (start.y == end.y)
+        {
+            // Horizontal corridor
+            int minX = Mathf.Min(start.x, end.x);
+            int maxX = Mathf.Max(start.x, end.x);
+            for (int x = minX; x <= maxX; x++)
+            {
+                if (IsValidCorridorPosition(x, start.y))
+                    matrix[x, start.y] = '+';
+            }
+        }
+    }
+
+    void DrawLShapedCorridor(Rect leftRoom, Rect rightRoom)
+    {
+        Vector2Int leftPoint = GetBestConnectionPoint(leftRoom, rightRoom);
+        Vector2Int rightPoint = GetBestConnectionPoint(rightRoom, leftRoom);
+
+        // Choose the clearest L-path
+        bool horizontalFirstClear = IsClearPath(leftPoint.x, leftPoint.y, rightPoint.x, leftPoint.y) &&
+                                   IsClearPath(rightPoint.x, leftPoint.y, rightPoint.x, rightPoint.y);
+
+        bool verticalFirstClear = IsClearPath(leftPoint.x, leftPoint.y, leftPoint.x, rightPoint.y) &&
+                                 IsClearPath(leftPoint.x, rightPoint.y, rightPoint.x, rightPoint.y);
+
+        bool horizontalFirst;
+        if (horizontalFirstClear && !verticalFirstClear)
+            horizontalFirst = true;
+        else if (!horizontalFirstClear && verticalFirstClear)
+            horizontalFirst = false;
+        else
+            horizontalFirst = UnityEngine.Random.Range(0f, 1f) > 0.5f; // Random if both or neither work
+
+        if (horizontalFirst)
+        {
+            // Draw horizontal then vertical
+            DrawStraightCorridor(leftPoint, new Vector2Int(rightPoint.x, leftPoint.y));
+            DrawStraightCorridor(new Vector2Int(rightPoint.x, leftPoint.y), rightPoint);
+        }
+        else
+        {
+            // Draw vertical then horizontal
+            DrawStraightCorridor(leftPoint, new Vector2Int(leftPoint.x, rightPoint.y));
+            DrawStraightCorridor(new Vector2Int(leftPoint.x, rightPoint.y), rightPoint);
+        }
+    }
+
+    Vector2Int GetBestConnectionPoint(Rect fromRoom, Rect toRoom)
+    {
+        Vector2Int roomCenter = new Vector2Int((int)(fromRoom.x + fromRoom.width / 2), (int)(fromRoom.y + fromRoom.height / 2));
+        Vector2Int targetCenter = new Vector2Int((int)(toRoom.x + toRoom.width / 2), (int)(toRoom.y + toRoom.height / 2));
+
+        Vector2Int direction = targetCenter - roomCenter;
+
+        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        {
+            // Connect horizontally
+            if (direction.x > 0)
+            {
+                int randomY = UnityEngine.Random.Range((int)fromRoom.y, (int)fromRoom.yMax);
+                return new Vector2Int((int)fromRoom.xMax, randomY);
+            }
+            else
+            {
+                int randomY = UnityEngine.Random.Range((int)fromRoom.y, (int)fromRoom.yMax);
+                return new Vector2Int((int)fromRoom.x - 1, randomY);
+            }
+        }
+        else
+        {
+            // Connect vertically
+            if (direction.y > 0)
+            {
+                int randomX = UnityEngine.Random.Range((int)fromRoom.x, (int)fromRoom.xMax);
+                return new Vector2Int(randomX, (int)fromRoom.yMax);
+            }
+            else
+            {
+                int randomX = UnityEngine.Random.Range((int)fromRoom.x, (int)fromRoom.xMax);
+                return new Vector2Int(randomX, (int)fromRoom.y - 1);
+            }
+        }
+    }
+
+    bool IsValidCorridorPosition(int x, int y)
+    {
+        // Check bounds
+        if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight)
+            return false;
+
+        // Don't overwrite rooms
+        if (matrix[x, y] == '#' || matrix[x, y] == '+' ||
+            matrix[x + 1, y] == '+' ||
+            matrix[x, y + 1] == '+' ||
+            matrix[x - 1, y] == '+' ||
+            matrix[x, y - 1] == '+')
+            return false;
+
+        return true;
     }
 }

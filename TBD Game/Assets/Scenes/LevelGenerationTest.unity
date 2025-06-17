@@ -246,8 +246,9 @@ MonoBehaviour:
   mapWidth: 64
   mapHeight: 64
   minRoomSize: 6
-  maxLeafSize: 20
+  maxLeafSize: 15
   maxIterations: 3
+  level: 1
 --- !u!4 &1630574682
 Transform:
   m_ObjectHideFlags: 0
