@@ -68,6 +68,7 @@ public class BSP : MonoBehaviour
         mapWidth = width;
         mapHeight = height;
         maxIterations = numberOfIterations;
+        leaves = new List<Leaf>();
 
         CreateSplits(maxSplits);
 
