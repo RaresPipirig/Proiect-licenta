@@ -224,6 +224,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1630574682}
   - component: {fileID: 1630574681}
+  - component: {fileID: 1630574684}
+  - component: {fileID: 1630574683}
   m_Layer: 0
   m_Name: LevelGenerationManager
   m_TagString: Untagged
@@ -264,6 +266,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1630574683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630574680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5b6f5678bc4ddd4a93506a0f6727080, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1630574684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630574680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a37bb87b17c0c747b34f7a333ad44c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  layoutGenerator: {fileID: 1630574681}
+  roomGenerator: {fileID: 1630574683}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

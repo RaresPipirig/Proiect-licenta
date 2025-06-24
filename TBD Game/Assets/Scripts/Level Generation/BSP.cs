@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Mathematics;
 using UnityEngine;
+using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 public class BSP : MonoBehaviour
 {
@@ -16,16 +18,16 @@ public class BSP : MonoBehaviour
     public int level = 1;
     char[,] matrix;
 
-    private List<Leaf> leaves = new List<Leaf>();
+    internal List<Leaf> leaves = new List<Leaf>();
 
     void Start()
     {
         //generate level 1 on start
-        GenerateDungeon(32, 32, 3, 8);
-        Debug();
+        //GenerateDungeon(32, 32, 3, 8);
+        //Debug();
     }
 
-    void Debug()
+    public void Debug()
     {
         string path = "Assets/Scripts/debug.txt";
 
@@ -44,9 +46,24 @@ public class BSP : MonoBehaviour
         }
 
         print("Matrix written to file.");
+
+        /*int counter = 0;
+
+        foreach (Leaf l in leaves)
+        {
+            if (l.leftChild == null && l.rightChild == null)
+            {
+                print("room" + counter + "(" + l.room.x + ", " + l.room.y + ")");
+                foreach(Vector2Int doorPosition in l.doorPositions)
+                {
+                    print(doorPosition);
+                }
+                counter++;
+            }
+        }*/
     }
 
-    void GenerateDungeon(int width, int height, int numberOfIterations, int maxSplits)
+    public void GenerateDungeon(int width, int height, int numberOfIterations, int maxSplits)
     {
         mapWidth = width;
         mapHeight = height;
@@ -62,6 +79,22 @@ public class BSP : MonoBehaviour
         WriteToMatrix();
 
         CreateRoads();
+
+        AddDoorsToMatrix();
+    }
+
+    void AddDoorsToMatrix()
+    {
+        foreach (Leaf l in leaves)
+        {
+            if (l.room != Rect.zero)
+            {
+                foreach (Vector2Int doorPosition in l.doorPositions)
+                {
+                    matrix[doorPosition.x, doorPosition.y] = 'O';
+                }
+            }
+        }
     }
 
     void CreateRoads()
@@ -399,7 +432,7 @@ public class BSP : MonoBehaviour
         {
             int minY = Mathf.Max((int)room1.y, (int)room2.y);
             int maxY = Mathf.Min((int)room1.yMax - 1, (int)room2.yMax - 1);
-            int corridorY = UnityEngine.Random.Range(minY, maxY + 1);
+            int corridorY = UnityEngine.Random.Range(minY + 1, maxY);
 
             Vector2Int startPoint, endPoint;
             Vector2Int door1, door2;
@@ -428,7 +461,7 @@ public class BSP : MonoBehaviour
         {
             int minX = Mathf.Max((int)room1.x, (int)room2.x);
             int maxX = Mathf.Min((int)room1.xMax - 1, (int)room2.xMax - 1);
-            int corridorX = UnityEngine.Random.Range(minX, maxX + 1);
+            int corridorX = UnityEngine.Random.Range(minX + 1, maxX);
 
             Vector2Int startPoint, endPoint;
             Vector2Int door1, door2;
@@ -500,6 +533,9 @@ public class BSP : MonoBehaviour
         else
             horizontalFirst = UnityEngine.Random.Range(0f, 1f) > 0.5f; // Random if both or neither work
 
+        Vector2Int door1 = MoveDoorInsideRoom(leftRoom, leftPoint);
+        Vector2Int door2 = MoveDoorInsideRoom(rightRoom, rightPoint);
+
         if (horizontalFirst)
         {
             // Draw horizontal then vertical
@@ -512,42 +548,72 @@ public class BSP : MonoBehaviour
             DrawStraightCorridor(leftPoint, new Vector2Int(leftPoint.x, rightPoint.y));
             DrawStraightCorridor(new Vector2Int(leftPoint.x, rightPoint.y), rightPoint);
         }
+
+        AddDoorToRoom(leftRoom, door1);
+        AddDoorToRoom(rightRoom, door2);
+    }
+
+    Vector2Int MoveDoorInsideRoom(Rect room, Vector2Int doorOutside)
+    {
+        int xMin = Mathf.FloorToInt(room.xMin);
+        int xMax = Mathf.FloorToInt(room.xMax);
+        int yMin = Mathf.FloorToInt(room.yMin);
+        int yMax = Mathf.FloorToInt(room.yMax);
+
+        if (doorOutside.x < xMin)
+            return new Vector2Int(xMin, doorOutside.y); // Left wall
+        if (doorOutside.x >= xMax)
+            return new Vector2Int(xMax - 1, doorOutside.y); // Right wall
+        if (doorOutside.y < yMin)
+            return new Vector2Int(doorOutside.x, yMin); // Bottom wall
+        if (doorOutside.y >= yMax)
+            return new Vector2Int(doorOutside.x, yMax - 1); // Top wall
+
+        return doorOutside;
     }
 
     Vector2Int GetBestConnectionPoint(Rect fromRoom, Rect toRoom)
     {
-        Vector2Int roomCenter = new Vector2Int((int)(fromRoom.x + fromRoom.width / 2), (int)(fromRoom.y + fromRoom.height / 2));
-        Vector2Int targetCenter = new Vector2Int((int)(toRoom.x + toRoom.width / 2), (int)(toRoom.y + toRoom.height / 2));
+        int xMin = Mathf.FloorToInt(fromRoom.xMin);
+        int xMax = Mathf.FloorToInt(fromRoom.xMax);
+        int yMin = Mathf.FloorToInt(fromRoom.yMin);
+        int yMax = Mathf.FloorToInt(fromRoom.yMax);
+
+        Vector2Int roomCenter = new Vector2Int((xMin + xMax) / 2, (yMin + yMax) / 2);
+        Vector2Int targetCenter = new Vector2Int(
+            (int)(toRoom.x + toRoom.width / 2),
+            (int)(toRoom.y + toRoom.height / 2)
+        );
 
         Vector2Int direction = targetCenter - roomCenter;
 
         if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
         {
             // Connect horizontally
+            int safeYMin = yMin + 1;
+            int safeYMax = yMax - 1;
+
+            if (safeYMin >= safeYMax) safeYMin = yMin; // fallback to corners
+            int randomY = UnityEngine.Random.Range(safeYMin, safeYMax);
+
             if (direction.x > 0)
-            {
-                int randomY = UnityEngine.Random.Range((int)fromRoom.y, (int)fromRoom.yMax);
-                return new Vector2Int((int)fromRoom.xMax, randomY);
-            }
+                return new Vector2Int(xMax, randomY); // right wall
             else
-            {
-                int randomY = UnityEngine.Random.Range((int)fromRoom.y, (int)fromRoom.yMax);
-                return new Vector2Int((int)fromRoom.x - 1, randomY);
-            }
+                return new Vector2Int(xMin - 1, randomY); // left wall
         }
         else
         {
             // Connect vertically
+            int safeXMin = xMin + 1;
+            int safeXMax = xMax - 1;
+
+            if (safeXMin >= safeXMax) safeXMin = xMin;
+            int randomX = UnityEngine.Random.Range(safeXMin, safeXMax);
+
             if (direction.y > 0)
-            {
-                int randomX = UnityEngine.Random.Range((int)fromRoom.x, (int)fromRoom.xMax);
-                return new Vector2Int(randomX, (int)fromRoom.yMax);
-            }
+                return new Vector2Int(randomX, yMax); // top wall
             else
-            {
-                int randomX = UnityEngine.Random.Range((int)fromRoom.x, (int)fromRoom.xMax);
-                return new Vector2Int(randomX, (int)fromRoom.y - 1);
-            }
+                return new Vector2Int(randomX, yMin - 1); // bottom wall
         }
     }
 
@@ -558,11 +624,11 @@ public class BSP : MonoBehaviour
             return false;
 
         // Don't overwrite rooms
-        if (matrix[x, y] == '#' || matrix[x, y] == '+' ||
+        if (matrix[x, y] == '#' || matrix[x, y] == '+' /*||
             matrix[x + 1, y] == '+' ||
             matrix[x, y + 1] == '+' ||
             matrix[x - 1, y] == '+' ||
-            matrix[x, y - 1] == '+')
+            matrix[x, y - 1] == '+'*/)
             return false;
 
         return true;
