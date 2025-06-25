@@ -7,14 +7,52 @@ using UnityEngine;
 
 public class RoomGenerator : MonoBehaviour
 {
+    Sprite[] floorTiles;
+    Sprite[] tallWalls;
+    Sprite[] shortWalls;
+
+    Dictionary<char, Sprite> tileDict = new Dictionary<char, Sprite>();
+
     void Start()
     {
-        
+        floorTiles = Resources.LoadAll<Sprite>("Tiles/atlas_floor-16x16");
+        tallWalls = Resources.LoadAll<Sprite>("Tiles/atlas_walls_high-16x32");
+        floorTiles = Resources.LoadAll<Sprite>("Tiles/atlas_walls_low-16x16");
+    }
+
+    void InitializeTileDictionary()
+    {
+        tileDict['W'] = shortWalls[32]; // void
+        tileDict['#'] = floorTiles[0]; // normal floor
+        tileDict['['] = floorTiles[38]; // floor under wall left
+        tileDict[']'] = floorTiles[39]; // floor under wall right
+        tileDict['|'] = shortWalls[12]; // normal vertical wall
+        tileDict['='] = shortWalls[37]; // normal horizontal wall
     }
 
     void Update()
     {
         
+    }
+
+    public char[,] GenerateSpritesFloor(char[,] layout)
+    {
+        char[,] matrix = layout;
+
+        for (int i = 0; i < matrix.GetLength(0); i++)
+        {
+            for (int j = 0; j < matrix.GetLength(1); j++)
+            {
+                if (j > 0)
+                    if (matrix[i, j] == 'W' && matrix[i, j - 1] == '#')
+                        matrix[i, j] = ']';
+                if (j < matrix.GetLength(1) - 1)
+                    if (matrix[i, j] == 'W' && matrix[i, j + 1] == '#')
+                        matrix[i, j] = '[';
+            }
+        }
+
+        return matrix;
     }
 
     public char[,] GenerateRoomLayout(BSP.Leaf leaf)

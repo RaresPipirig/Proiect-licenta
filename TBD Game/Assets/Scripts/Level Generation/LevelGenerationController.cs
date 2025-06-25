@@ -64,6 +64,7 @@ public class LevelGenerationController : MonoBehaviour
         }
 
         char[,] matrix = roomGenerator.GenerateRoomLayout(leaf);
+        matrix = roomGenerator.GenerateSpritesFloor(matrix);
 
         string path = "Assets/Scripts/debugRoom.txt";
 
