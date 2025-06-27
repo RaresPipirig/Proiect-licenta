@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using TreeEditor;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class RoomGenerator : MonoBehaviour
 {
@@ -11,23 +13,48 @@ public class RoomGenerator : MonoBehaviour
     Sprite[] tallWalls;
     Sprite[] shortWalls;
 
-    Dictionary<char, Sprite> tileDict = new Dictionary<char, Sprite>();
+    Dictionary<char, Sprite> tileDict;
+
+    [Header("Tilemap References")]
+    public Tilemap backgroundTilemap;
+    public Tilemap wallTilemap;
+    public Tilemap floorTilemap;
+
+    public Material pixelSnapMaterial;
 
     void Start()
     {
-        floorTiles = Resources.LoadAll<Sprite>("Tiles/atlas_floor-16x16");
-        tallWalls = Resources.LoadAll<Sprite>("Tiles/atlas_walls_high-16x32");
-        floorTiles = Resources.LoadAll<Sprite>("Tiles/atlas_walls_low-16x16");
+        //InitializeTileDictionary();
     }
 
-    void InitializeTileDictionary()
+    internal void InitializeTileDictionary()
     {
+        backgroundTilemap.GetComponent<TilemapRenderer>().material = pixelSnapMaterial;
+        wallTilemap.GetComponent<TilemapRenderer>().material = pixelSnapMaterial;
+        floorTilemap.GetComponent<TilemapRenderer>().material = pixelSnapMaterial;
+
+        floorTiles = Resources.LoadAll<Sprite>("Tiles/atlas_floor-16x16");
+        tallWalls = Resources.LoadAll<Sprite>("Tiles/atlas_walls_high-16x32");
+        shortWalls = Resources.LoadAll<Sprite>("Tiles/atlas_walls_low-16x16");
+        tileDict = new Dictionary<char, Sprite>();
+
         tileDict['W'] = shortWalls[32]; // void
         tileDict['#'] = floorTiles[0]; // normal floor
         tileDict['['] = floorTiles[38]; // floor under wall left
         tileDict[']'] = floorTiles[39]; // floor under wall right
         tileDict['|'] = shortWalls[12]; // normal vertical wall
         tileDict['='] = shortWalls[37]; // normal horizontal wall
+        tileDict['('] = shortWalls[1]; // top left corner wall
+        tileDict[')'] = shortWalls[3]; // top right corner wall
+        tileDict['{'] = shortWalls[24]; // bottom left corner wall
+        tileDict['}'] = shortWalls[26]; // bottom right corner wall
+        tileDict['1'] = floorTiles[1]; // decorative floor 1
+        tileDict['2'] = floorTiles[2]; // decorative floor 2
+        tileDict['3'] = floorTiles[7]; // decorative floor 3
+        tileDict['4'] = floorTiles[8]; // decorative floor 4
+        tileDict['5'] = floorTiles[9]; // decorative floor 5
+        tileDict['6'] = floorTiles[14]; // decorative floor 6
+        tileDict['7'] = floorTiles[15]; // decorative floor 7
     }
 
     void Update()
@@ -35,9 +62,109 @@ public class RoomGenerator : MonoBehaviour
         
     }
 
+    public char[,] GenerateSpritesWalls(char[,] layout)
+    {
+        char[,] matrix = new char[layout.GetLength(0), layout.GetLength(1)];
+        Array.Copy(layout, matrix, layout.Length);
+
+        for (int i = 0; i < matrix.GetLength(0); i++)
+        {
+            for (int j = 0; j < matrix.GetLength(1); j++)
+            {
+                if (matrix[i, j] != 'W') continue;
+
+                bool hasFloorLeft = HasNeighbor(matrix, i, j, 0, -1, '#');
+                bool hasFloorRight = HasNeighbor(matrix, i, j, 0, 1, '#');
+                bool hasFloorTop = HasNeighbor(matrix, i, j, -1, 0, '#');
+                bool hasFloorBottom = HasNeighbor(matrix, i, j, 1, 0, '#');
+
+                bool hasWallLeft = HasNeighbor(matrix, i, j, 0, -1, 'W');
+                bool hasWallRight = HasNeighbor(matrix, i, j, 0, 1, 'W');
+                bool hasWallTop = HasNeighbor(matrix, i, j, -1, 0, 'W');
+                bool hasWallBottom = HasNeighbor(matrix, i, j, 1, 0, 'W');
+
+                if (hasWallTop && hasWallBottom && (hasFloorLeft || hasFloorRight))
+                    matrix[i, j] = '|';
+                else if (hasWallRight && hasWallLeft && (hasFloorTop || hasFloorBottom))
+                    matrix[i, j] = '=';
+                else if (!hasWallLeft && !hasWallTop)
+                    matrix[i, j] = '(';
+                else if (!hasWallRight && !hasWallTop)
+                    matrix[i, j] = ')';
+                else if (!hasWallLeft && !hasWallBottom)
+                    matrix[i, j] = '{';
+                else if (!hasWallRight && !hasWallBottom)
+                    matrix[i, j] = '}';
+            }
+        }
+
+        return matrix;
+    }
+
+    private bool HasNeighbor(char[,] matrix, int x, int y, int dx, int dy, char target)
+    {
+        int newX = x + dx;
+        int newY = y + dy;
+
+        if (newX < 0 || newX >= matrix.GetLength(0) ||
+            newY < 0 || newY >= matrix.GetLength(1))
+        {
+            return false;
+        }
+
+        if(target == '#')
+            return matrix[newX, newY] == target;
+        else
+        {
+            return matrix[newX, newY] != '#';
+        }
+    }
+
+    public void PlaceMatrixOnTilemap(char[,] matrix, Tilemap targetTilemap, Vector2Int roomPosition)
+    {
+        Tile tempTile = ScriptableObject.CreateInstance<Tile>();
+        Vector3Int unityRoomPosition = GetUnityPosition(roomPosition.x, roomPosition.y);
+
+        for (int x = 0; x < matrix.GetLength(0); x++)
+        {
+            for (int y = 0; y < matrix.GetLength(1); y++)
+            {
+                char tileChar = matrix[x, y];
+
+                if (tileDict.TryGetValue(tileChar, out Sprite sprite))
+                {
+                    tempTile.sprite = sprite;
+
+                    Vector3Int tilePos = GetUnityPosition(roomPosition.x + x, roomPosition.y + y/*, matrix.GetLength(0)*/);
+
+                    if (tileChar == 'W')
+                    {
+                        targetTilemap.SetTileFlags(tilePos, TileFlags.None);
+                        targetTilemap.SetColor(tilePos, Color.black);
+                    }
+
+                    if(!(targetTilemap == wallTilemap && tileChar == '#'))
+                        targetTilemap.SetTile(tilePos, tempTile);
+                }
+                else
+                {
+                    print("Error: unknown tile.");
+                }
+            }
+        }
+    }
+
+    Vector3Int GetUnityPosition(int originalX, int originalY/*, int roomHeight*/)
+    {
+        int unityX = originalY;
+        int unityY = - originalX;
+        return new Vector3Int(unityX, unityY, 0);
+    }
+
     public char[,] GenerateSpritesFloor(char[,] layout)
     {
-        char[,] matrix = layout;
+        char[,] matrix = new char[layout.GetLength(0), layout.GetLength(1)];
+        Array.Copy(layout, matrix, layout.Length);
 
         for (int i = 0; i < matrix.GetLength(0); i++)
         {
@@ -52,6 +179,26 @@ public class RoomGenerator : MonoBehaviour
             }
         }
 
+        matrix = DecorateFloor(matrix);
+
+        return matrix;
+    }
+
+    char[,] DecorateFloor(char[,] layout)
+    {
+        char[,] matrix = (char[,])layout.Clone();
+        System.Random rand = new System.Random();
+
+        for (int i = 0; i < matrix.GetLength(0); i++)
+        {
+            for (int j = 0; j < matrix.GetLength(1); j++)
+            {
+                if (matrix[i, j] == '#' && rand.Next(4) == 0)
+                {
+                    matrix[i, j] = (char)('1' + rand.Next(7));
+                }
+            }
+        }
         return matrix;
     }
 
@@ -83,7 +230,7 @@ public class RoomGenerator : MonoBehaviour
         }
 
         // Add inner wall rectangles
-        int rectCount = Random.Range(0, 4); // 0 to 3 rectangles
+        int rectCount = UnityEngine.Random.Range(0, 4); // 0 to 3 rectangles
         int attempt = 0;
         int rectangles = 0;
 
@@ -91,8 +238,8 @@ public class RoomGenerator : MonoBehaviour
 
         while ( attempt < 20 && rectangles < rectCount)
         {
-            int rectWidth = Random.Range(3, 7);
-            int rectHeight = Random.Range(3, 7);
+            int rectWidth = UnityEngine.Random.Range(3, 7);
+            int rectHeight = UnityEngine.Random.Range(3, 7);
 
             int maxX = width - rectWidth - 2;
             int maxY = height - rectHeight - 2;
@@ -100,8 +247,8 @@ public class RoomGenerator : MonoBehaviour
             if (maxX <= 2 || maxY <= 2)
                 break; // not enough room
 
-            int startX = Random.Range(2, maxX);
-            int startY = Random.Range(2, maxY);
+            int startX = UnityEngine.Random.Range(2, maxX);
+            int startY = UnityEngine.Random.Range(2, maxY);
 
             if (IsAreaEmptyWithBuffer(matrix, startX, startY, rectWidth, rectHeight))
             {

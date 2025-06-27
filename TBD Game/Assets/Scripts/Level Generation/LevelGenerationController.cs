@@ -19,7 +19,7 @@ public class LevelGenerationController : MonoBehaviour
     {
         int attempts = 0;
 
-        while (attempts < 5)
+        while (attempts < 50)
         {
             layoutGenerator.GenerateDungeon(16, 16, 2, 3);
             bool retry = false;
@@ -64,7 +64,13 @@ public class LevelGenerationController : MonoBehaviour
         }
 
         char[,] matrix = roomGenerator.GenerateRoomLayout(leaf);
-        matrix = roomGenerator.GenerateSpritesFloor(matrix);
+        char[,] floor = roomGenerator.GenerateSpritesFloor(matrix);
+        char[,] walls = roomGenerator.GenerateSpritesWalls(matrix);
+        roomGenerator.InitializeTileDictionary();
+        roomGenerator.PlaceMatrixOnTilemap(floor, roomGenerator.floorTilemap, Vector2Int.zero);
+        roomGenerator.PlaceMatrixOnTilemap(walls, roomGenerator.wallTilemap, Vector2Int.zero);
+
+        matrix = walls;
 
         string path = "Assets/Scripts/debugRoom.txt";
 
