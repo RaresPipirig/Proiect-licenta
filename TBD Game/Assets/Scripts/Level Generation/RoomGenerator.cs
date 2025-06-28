@@ -13,7 +13,9 @@ public class RoomGenerator : MonoBehaviour
     Sprite[] tallWalls;
     Sprite[] shortWalls;
 
-    Dictionary<char, Sprite> tileDict;
+    internal Dictionary<char, Sprite> tileDict;
+    internal Dictionary<int, char[,]> roadWallsDict;
+    internal Dictionary<int, char[,]> roadFloorDict;
 
     [Header("Tilemap References")]
     public Tilemap backgroundTilemap;
@@ -22,12 +24,16 @@ public class RoomGenerator : MonoBehaviour
 
     public Material pixelSnapMaterial;
 
+    HashSet<char> wallChars = new HashSet<char> { 'W', '|', '=', '(', ')', '{', '}' };
+
+    internal int mapHeight;
+
     void Start()
     {
-        //InitializeTileDictionary();
+        //InitializeTileDictionaries();
     }
 
-    internal void InitializeTileDictionary()
+    internal void InitializeTileDictionaries()
     {
         backgroundTilemap.GetComponent<TilemapRenderer>().material = pixelSnapMaterial;
         wallTilemap.GetComponent<TilemapRenderer>().material = pixelSnapMaterial;
@@ -55,6 +61,281 @@ public class RoomGenerator : MonoBehaviour
         tileDict['5'] = floorTiles[9]; // decorative floor 5
         tileDict['6'] = floorTiles[14]; // decorative floor 6
         tileDict['7'] = floorTiles[15]; // decorative floor 7
+
+        InitializeRoadDictionary();
+    }
+
+    private void InitializeRoadDictionary()
+    {
+        //. . .
+        //. . .
+        //. . .
+        char[,] matrix = new char[,]
+        {
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'}
+        };
+
+        //. . .
+        //+ + +
+        //. . .
+        char[,] matrix1 = new char[,]
+        {
+            {'=', '=', '=', '='},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'=', '=', '=', '='}
+        };
+
+        //. + .
+        //. + .
+        //. + .
+        char[,] matrix2 = new char[,]
+        {
+            {'|', '#', '#', '|'},
+            {'|', '#', '#', '|'},
+            {'|', '#', '#', '|'},
+            {'|', '#', '#', '|'}
+        };
+
+        //. + .
+        //. + +
+        //. . .
+        char[,] matrix3 = new char[,]
+        {
+            {'|', '#', '#', '{'},
+            {'|', '#', '#', '#'},
+            {'|', '#', '#', '#'},
+            {'{', '=', '=', '='}
+        };
+
+        //. + .
+        //+ + .
+        //. . .
+        char[,] matrix4 = new char[,]
+        {
+            {'}', '#', '#', '|'},
+            {'#', '#', '#', '|'},
+            {'#', '#', '#', '|'},
+            {'=', '=', '=', '}'}
+        };
+
+        //. . .
+        //. + +
+        //. + .
+        char[,] matrix5 = new char[,]
+        {
+            {'(', '=', '=', '='},
+            {'|', '#', '#', '#'},
+            {'|', '#', '#', '#'},
+            {'|', '#', '#', '('}
+        };
+
+        //. . .
+        //+ + .
+        //. + .
+        char[,] matrix6 = new char[,]
+        {
+            {'=', '=', '=', ')'},
+            {'#', '#', '#', '|'},
+            {'#', '#', '#', '|'},
+            {')', '#', '#', '|'}
+        };
+
+        //. + .
+        //+ + +
+        //. . .
+        char[,] matrix7 = new char[,]
+        {
+            {'}', '#', '#', '{'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'=', '=', '=', '='}
+        };
+
+        //. + .
+        //. + +
+        //. + .
+        char[,] matrix8 = new char[,]
+        {
+            {'|', '#', '#', '{'},
+            {'|', '#', '#', '#'},
+            {'|', '#', '#', '#'},
+            {'|', '#', '#', '('}
+        };
+
+        //. . .
+        //+ + +
+        //. + .
+        char[,] matrix9 = new char[,]
+        {
+            {'=', '=', '=', '='},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {')', '#', '#', '('}
+        };
+
+        //. + .
+        //+ + .
+        //. + .
+        char[,] matrix10 = new char[,]
+        {
+            {'}', '#', '#', '|'},
+            {'#', '#', '#', '|'},
+            {'#', '#', '#', '|'},
+            {')', '#', '#', '|'}
+        };
+
+        //. + .
+        //+ + +
+        //. + .
+        char[,] matrix11 = new char[,]
+        {
+            {'}', '#', '#', '{'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {')', '#', '#', '('}
+        };
+
+        roadWallsDict = new Dictionary<int, char[,]>();
+
+        roadWallsDict[3] = matrix1;
+        roadWallsDict[12] = matrix2;
+        roadWallsDict[6] = matrix3;
+        roadWallsDict[5] = matrix4;
+        roadWallsDict[10] = matrix5;
+        roadWallsDict[9] = matrix6;
+        roadWallsDict[7] = matrix7;
+        roadWallsDict[14] = matrix8;
+        roadWallsDict[11] = matrix9;
+        roadWallsDict[13] = matrix10;
+        roadWallsDict[15] = matrix11;
+
+        roadFloorDict = new Dictionary<int, char[,]>();
+
+        //. + .
+        //. + .
+        //. + .
+        char[,] matrix12 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'[', '#', '#', ']'},
+            {'[', '#', '#', ']'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. + .
+        //. + +
+        //. . .
+        char[,] matrix13 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'[', '#', '#', '#'},
+            {'[', '#', '#', '#'},
+            {'[', '=', '=', '='}
+        };
+
+        //. + .
+        //+ + .
+        //. . .
+        char[,] matrix14 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'#', '#', '#', ']'},
+            {'#', '#', '#', ']'},
+            {'=', '=', '=', ']'}
+        };
+
+        //. . .
+        //. + +
+        //. + .
+        char[,] matrix15 = new char[,]
+        {
+            {'[', '=', '=', '='},
+            {'[', '#', '#', '#'},
+            {'[', '#', '#', '#'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. . .
+        //+ + .
+        //. + .
+        char[,] matrix16 = new char[,]
+        {
+            {'=', '=', '=', ']'},
+            {'#', '#', '#', ']'},
+            {'#', '#', '#', ']'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. + .
+        //+ + +
+        //. . .
+        char[,] matrix17 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'=', '=', '=', '='}
+        };
+
+        //. + .
+        //. + +
+        //. + .
+        char[,] matrix18 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'[', '#', '#', '#'},
+            {'[', '#', '#', '#'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. . .
+        //+ + +
+        //. + .
+        char[,] matrix19 = new char[,]
+        {
+            {'=', '=', '=', '='},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. + .
+        //+ + .
+        //. + .
+        char[,] matrix110 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'#', '#', '#', ']'},
+            {'#', '#', '#', ']'},
+            {'[', '#', '#', ']'}
+        };
+
+        //. + .
+        //+ + +
+        //. + .
+        char[,] matrix111 = new char[,]
+        {
+            {'[', '#', '#', ']'},
+            {'#', '#', '#', '#'},
+            {'#', '#', '#', '#'},
+            {'[', '#', '#', ']'}
+        };
+
+        roadFloorDict[3] = matrix1;
+        roadFloorDict[12] = matrix12;
+        roadFloorDict[6] = matrix13;
+        roadFloorDict[5] = matrix14;
+        roadFloorDict[10] = matrix15;
+        roadFloorDict[9] = matrix16;
+        roadFloorDict[7] = matrix17;
+        roadFloorDict[14] = matrix18;
+        roadFloorDict[11] = matrix19;
+        roadFloorDict[13] = matrix110;
+        roadFloorDict[15] = matrix111;
     }
 
     void Update()
@@ -87,13 +368,13 @@ public class RoomGenerator : MonoBehaviour
                     matrix[i, j] = '|';
                 else if (hasWallRight && hasWallLeft && (hasFloorTop || hasFloorBottom))
                     matrix[i, j] = '=';
-                else if (!hasWallLeft && !hasWallTop)
+                else if (!hasWallLeft && !hasWallTop && !hasFloorRight && !hasFloorBottom)
                     matrix[i, j] = '(';
-                else if (!hasWallRight && !hasWallTop)
+                else if (!hasWallRight && !hasWallTop && !hasFloorLeft && !hasFloorBottom)
                     matrix[i, j] = ')';
-                else if (!hasWallLeft && !hasWallBottom)
+                else if (!hasWallLeft && !hasWallBottom && !hasFloorRight && !hasFloorTop)
                     matrix[i, j] = '{';
-                else if (!hasWallRight && !hasWallBottom)
+                else if (!hasWallRight && !hasWallBottom && !hasFloorLeft && !hasFloorTop)
                     matrix[i, j] = '}';
             }
         }
@@ -123,7 +404,7 @@ public class RoomGenerator : MonoBehaviour
     public void PlaceMatrixOnTilemap(char[,] matrix, Tilemap targetTilemap, Vector2Int roomPosition)
     {
         Tile tempTile = ScriptableObject.CreateInstance<Tile>();
-        Vector3Int unityRoomPosition = GetUnityPosition(roomPosition.x, roomPosition.y);
+        Vector3 unityRoomPosition = GetUnityPosition(roomPosition.x, roomPosition.y);
 
         for (int x = 0; x < matrix.GetLength(0); x++)
         {
@@ -135,7 +416,8 @@ public class RoomGenerator : MonoBehaviour
                 {
                     tempTile.sprite = sprite;
 
-                    Vector3Int tilePos = GetUnityPosition(roomPosition.x + x, roomPosition.y + y/*, matrix.GetLength(0)*/);
+                    Vector3 aux = GetUnityPosition(roomPosition.x + x, roomPosition.y + y/*, matrix.GetLength(0)*/);
+                    Vector3Int tilePos = new Vector3Int((int)aux.x, (int)aux.y, (int) aux.z);
 
                     if (tileChar == 'W')
                     {
@@ -143,8 +425,13 @@ public class RoomGenerator : MonoBehaviour
                         targetTilemap.SetColor(tilePos, Color.black);
                     }
 
-                    if(!(targetTilemap == wallTilemap && tileChar == '#'))
-                        targetTilemap.SetTile(tilePos, tempTile);
+                    if (targetTilemap == floorTilemap && wallChars.Contains(tileChar))
+                        continue;
+
+                    if (targetTilemap == wallTilemap && tileChar == '#')
+                        continue;
+
+                    targetTilemap.SetTile(tilePos, tempTile);
                 }
                 else
                 {
@@ -154,11 +441,11 @@ public class RoomGenerator : MonoBehaviour
         }
     }
 
-    Vector3Int GetUnityPosition(int originalX, int originalY/*, int roomHeight*/)
+    internal Vector3 GetUnityPosition(float originalX, float originalY/*, int roomHeight*/)
     {
-        int unityX = originalY;
-        int unityY = - originalX;
-        return new Vector3Int(unityX, unityY, 0);
+        float unityX = originalY;
+        float unityY = mapHeight - 1 - originalX;
+        return new Vector3(unityX, unityY, 0);
     }
 
     public char[,] GenerateSpritesFloor(char[,] layout)
@@ -184,7 +471,7 @@ public class RoomGenerator : MonoBehaviour
         return matrix;
     }
 
-    char[,] DecorateFloor(char[,] layout)
+    internal char[,] DecorateFloor(char[,] layout)
     {
         char[,] matrix = (char[,])layout.Clone();
         System.Random rand = new System.Random();
@@ -202,7 +489,7 @@ public class RoomGenerator : MonoBehaviour
         return matrix;
     }
 
-    public char[,] GenerateRoomLayout(BSP.Leaf leaf)
+    public char[,] GenerateRoomLayout(BSP.Leaf leaf, bool isFirst)
     {
         int width = (int)leaf.room.width * 4;
         int height = (int)leaf.room.height * 4;
@@ -229,40 +516,43 @@ public class RoomGenerator : MonoBehaviour
             matrix[width - 1, j] = 'W';
         }
 
-        // Add inner wall rectangles
-        int rectCount = UnityEngine.Random.Range(0, 4); // 0 to 3 rectangles
-        int attempt = 0;
-        int rectangles = 0;
-
-        print(rectCount);
-
-        while ( attempt < 20 && rectangles < rectCount)
+        if (!isFirst)
         {
-            int rectWidth = UnityEngine.Random.Range(3, 7);
-            int rectHeight = UnityEngine.Random.Range(3, 7);
+            // Add inner wall rectangles
+            int rectCount = UnityEngine.Random.Range(0, 4); // 0 to 3 rectangles
+            int attempt = 0;
+            int rectangles = 0;
 
-            int maxX = width - rectWidth - 2;
-            int maxY = height - rectHeight - 2;
+            print(rectCount);
 
-            if (maxX <= 2 || maxY <= 2)
-                break; // not enough room
-
-            int startX = UnityEngine.Random.Range(2, maxX);
-            int startY = UnityEngine.Random.Range(2, maxY);
-
-            if (IsAreaEmptyWithBuffer(matrix, startX, startY, rectWidth, rectHeight))
+            while (attempt < 20 && rectangles < rectCount)
             {
-                rectangles++;
-                for (int i = startX; i < startX + rectWidth; i++)
+                int rectWidth = UnityEngine.Random.Range(3, 7);
+                int rectHeight = UnityEngine.Random.Range(3, 7);
+
+                int maxX = width - rectWidth - 2;
+                int maxY = height - rectHeight - 2;
+
+                if (maxX <= 2 || maxY <= 2)
+                    break; // not enough room
+
+                int startX = UnityEngine.Random.Range(2, maxX);
+                int startY = UnityEngine.Random.Range(2, maxY);
+
+                if (IsAreaEmptyWithBuffer(matrix, startX, startY, rectWidth, rectHeight))
                 {
-                    for (int j = startY; j < startY + rectHeight; j++)
+                    rectangles++;
+                    for (int i = startX; i < startX + rectWidth; i++)
                     {
-                        matrix[i, j] = 'W';
+                        for (int j = startY; j < startY + rectHeight; j++)
+                        {
+                            matrix[i, j] = 'W';
+                        }
                     }
                 }
-            }
 
-            attempt++;
+                attempt++;
+            }
         }
 
         // Create openings in the wall for the doors

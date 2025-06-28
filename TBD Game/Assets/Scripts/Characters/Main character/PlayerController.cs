@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private AttackController attackController;
     [SerializeField] internal MovementController movementController;
+    [SerializeField] private HPSystem hpSystem;
     [SerializeField] internal StaminaSystem system;
 
     private PlayerInput playerInput;
@@ -27,7 +28,7 @@ public class PlayerController : MonoBehaviour
     [Space]
 
     [Header("Debug")]
-    [SerializeField] private int HP;
+    [SerializeField] internal float HP;
     [SerializeField] internal bool isInvincible;
 
     private void Awake()
@@ -71,19 +72,27 @@ public class PlayerController : MonoBehaviour
     {
         if (!isInvincible)
         {
-            HP -= damage;
-            print(gameObject.name + " hit! Remaining HP: " + HP);
+            if (HP > damage)
+            {
+                HP -= damage;
+                hpSystem.recoveryCooldown = hpSystem.recoveryDelay;
+                print(gameObject.name + " hit for " + damage + "! Remaining HP: " + HP);
 
-            movementController.rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
-            movementController.canMove += 1;
-            movementController.isSprinting = false;
-            movementController.isDashing = false;
-            movementController.isMoving = false;
+                movementController.rb.AddForce(aimDirection * knockbackForce, ForceMode2D.Impulse);
+                movementController.canMove += 1;
+                movementController.isSprinting = false;
+                movementController.isDashing = false;
+                movementController.isMoving = false;
 
-            await Task.Delay((int)(knockbackDuration * 1000));
+                await Task.Delay((int)(knockbackDuration * 1000));
 
-            movementController.rb.velocity = Vector2.zero;
-            movementController.canMove -= 1;
+                movementController.rb.velocity = Vector2.zero;
+                movementController.canMove -= 1;
+            }
+            else
+            {
+                GameObject.Destroy(gameObject);
+            }
         }
     }
 

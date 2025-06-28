@@ -16,7 +16,7 @@ public class BSP : MonoBehaviour
     public int maxIterations = 3;
 
     public int level = 1;
-    char[,] matrix;
+    internal char[,] matrix;
 
     internal List<Leaf> leaves = new List<Leaf>();
 
