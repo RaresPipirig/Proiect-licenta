@@ -523,8 +523,6 @@ public class RoomGenerator : MonoBehaviour
             int attempt = 0;
             int rectangles = 0;
 
-            print(rectCount);
-
             while (attempt < 20 && rectangles < rectCount)
             {
                 int rectWidth = UnityEngine.Random.Range(3, 7);
@@ -565,9 +563,6 @@ public class RoomGenerator : MonoBehaviour
             bool onBottom = door.x == (int)leaf.room.xMax - 1;
             bool onLeft = door.y == (int)leaf.room.yMin;
             bool onRight = door.y == (int)leaf.room.yMax - 1;
-
-            print(localX + " " + localY + " " + onLeft +
-                " " + onRight + " " + onTop + " " + onBottom);
 
             if(!IsInside(matrix, localX, localY))
             {
