@@ -66,7 +66,7 @@ public class MovementController : MonoBehaviour
     internal async void StartDash()
     {
         hasReleasedDash = false;
-        if (isDashing || !isMoving || !canDash || playerController.system.UseStamina(dashStaminaCost)) return;
+        if (isDashing || !isMoving || !canDash || !playerController.system.UseStamina(dashStaminaCost)) return;
 
         isDashing = true;
         canDash = false;

@@ -22,6 +22,7 @@ public class DepravedController : MonoBehaviour
     [SerializeField] private int detectionRange;
     [SerializeField] private float tooCloseRange;
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private LayerMask obstacleLayer;
 
     [SerializeField] private bool canAttack = true;
     [SerializeField] private bool isAttacking = false;
@@ -68,15 +69,33 @@ public class DepravedController : MonoBehaviour
     private void GetPlayerDirection()
     {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRange, playerLayer);
-
         if (hit != null)
         {
-            playerDirection = (hit.transform.position - transform.position).normalized;
+            Vector2 directionToPlayer = hit.transform.position - transform.position;
+            
+            if (HasLineOfSight(hit.transform.position))
+            {
+                playerDirection = directionToPlayer.normalized;
+            }
+            else
+            {
+                playerDirection = Vector2.zero;
+            }
         }
         else
         {
             playerDirection = Vector2.zero;
         }
+    }
+
+    private bool HasLineOfSight(Vector3 targetPosition)
+    {
+        Vector2 direction = targetPosition - transform.position;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, direction.magnitude, obstacleLayer);
+
+        Debug.DrawRay(transform.position, direction, hit.collider == null ? Color.green : Color.red, 1f);
+
+        return hit.collider == null;
     }
 
     private bool isCloseEnoughToPlayer()

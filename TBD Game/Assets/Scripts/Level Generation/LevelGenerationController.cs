@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -17,6 +18,8 @@ public class LevelGenerationController : MonoBehaviour
     public char[,] layout;
 
     public GameObject playerPrefab;
+    public GameObject depravedPrefab;
+    public GameObject magePrefab;
 
     void Start()
     {
@@ -24,23 +27,48 @@ public class LevelGenerationController : MonoBehaviour
         roomGenerator.InitializeTileDictionaries();
         //Debug();
         
-        GenerateLevel(1);
+        GenerateLevel(3);
     }
 
     void InitializeLevelValues()
     {
         level = new Dictionary<int, int[]>();
 
-        level[1] = new int[] {16, 2, 3};
+        level[1] = new int[] {16, 20, 3, 40};
+        level[2] = new int[] {24, 20, 5, 45};
+        level[3] = new int[] {24, 20, 6, 55};
+        level[4] = new int[] {32, 20, 10, 65};
+        level[5] = new int[] {48, 20, 12, 80};
+        level[6] = new int[] {128, 20, 30, 100};
     }
 
     void GenerateLevel(int selectedLevel)
     {
-        GenerateLayout(selectedLevel);
-        PlaceBackground();
-        PlaceCorridors();
-        PlaceRooms();
-        SpawnPlayer();
+        int attempts = 0;
+
+        while (attempts < 500)
+        {
+            try
+            {
+                roomGenerator.floorTilemap.ClearAllTiles();
+                roomGenerator.wallTilemap.ClearAllTiles();
+                roomGenerator.backgroundTilemap.ClearAllTiles();
+
+                GenerateLayout(selectedLevel);
+                PlaceBackground();
+                PlaceCorridors();
+                PlaceRooms(level[selectedLevel][3]);
+                SpawnPlayer();
+            }
+            catch (Exception ex)
+            {
+                print(ex);
+                attempts++;
+                continue;
+            }
+
+            break;
+        }
     }
 
     void PlaceBackground()
@@ -79,46 +107,35 @@ public class LevelGenerationController : MonoBehaviour
 
     void GenerateLayout(int selectedLevel)
     {
-        int attempts = 0;
-
-        while (attempts < 50)
-        {
-            layoutGenerator.GenerateDungeon(level[selectedLevel][0], level[selectedLevel][0],
+        layoutGenerator.GenerateDungeon(level[selectedLevel][0], level[selectedLevel][0],
                 level[selectedLevel][1], level[selectedLevel][2]);
-            bool retry = false;
 
-            foreach (Leaf l in layoutGenerator.leaves)
+        int leavesCount = 0;
+
+        foreach (Leaf l in layoutGenerator.leaves)
+        {
+            if (l.leftChild == null && l.rightChild == null)
             {
-                if (l.leftChild == null && l.rightChild == null)
+                leavesCount++;
+                foreach (Vector2Int door in l.doorPositions)
                 {
-                    foreach (Vector2Int door in l.doorPositions)
+                    if (IsCorner(l.room, door) || IsOutside(l.room, door))
                     {
-                        if (IsCorner(l.room, door))
-                        {
-                            retry = true;
-                            break;
-                        }
+                        throw new Exception("Corner door in room");
                     }
                 }
-
-                if (retry) break;
             }
-
-            if (retry)
-            {
-                attempts++;
-                continue;
-            }
-
-            break;
         }
+
+        if (selectedLevel > 1 && leavesCount < 5)
+            throw new Exception("Too few rooms.");
 
         layout = layoutGenerator.matrix;
         roomGenerator.mapHeight = layout.GetLength(0) * 4;
         layoutGenerator.Debug();
     }
 
-    void PlaceRooms()
+    void PlaceRooms(int targetDifficulty)
     {
         bool firstRoom = true;
 
@@ -127,7 +144,6 @@ public class LevelGenerationController : MonoBehaviour
             if (l.leftChild == null && l.rightChild == null)
             {
                 char[,] layoutMatrix = roomGenerator.GenerateRoomLayout(l, firstRoom);
-                firstRoom = false;
 
                 Vector2Int roomPosition = new Vector2Int((int)l.room.x * 4, (int)l.room.y * 4);
 
@@ -137,8 +153,107 @@ public class LevelGenerationController : MonoBehaviour
 
                 char[,] wallsMatrix = roomGenerator.GenerateSpritesWalls(layoutMatrix);
                 roomGenerator.PlaceMatrixOnTilemap(wallsMatrix, roomGenerator.wallTilemap, roomPosition);
+
+                if (!firstRoom)
+                    SpawnEnemies(l, layoutMatrix, targetDifficulty);
+                firstRoom = false;
             }
         }
+    }
+
+    void SpawnEnemies(Leaf l, char[,] layout, int targetDifficulty)
+    {
+        float sizeRating = GetSizeRating(layout.GetLength(0) * layout.GetLength(1), 144, 960);
+        float baseMultiplier = ApplyCoverReduction(sizeRating, layout);
+
+        float currentDifficulty = 0;
+        List<Vector2Int> floorTiles = GetAllFloorTiles(layout);
+        while ((float)targetDifficulty - currentDifficulty >= 10)
+        {
+            currentDifficulty = SpawnEnemy(currentDifficulty, baseMultiplier, floorTiles, l.room.x * 4, l.room.y * 4);
+        }
+    }
+
+    List<Vector2Int> GetAllFloorTiles(char[,] layout)
+    {
+        List<Vector2Int> floorTiles = new List<Vector2Int>();
+
+        int rows = layout.GetLength(0);
+        int cols = layout.GetLength(1);
+
+        for (int i = 1; i < rows - 1; i++)
+        {
+            for (int j = 1; j < cols - 1; j++)
+            {
+                if (layout[i, j] == '#')
+                {
+                    floorTiles.Add(new Vector2Int(i, j));
+                }
+            }
+        }
+
+        return floorTiles;
+    }
+
+    float SpawnEnemy(float currentDifficulty, float multiplier, List<Vector2Int> floorTiles, float roomX, float roomY)
+    {
+        Vector2Int randomTile = floorTiles[UnityEngine.Random.Range(0, floorTiles.Count)];
+
+        Vector3 spawnPos = roomGenerator.GetUnityPosition(roomX + randomTile.x, roomY + randomTile.y);
+
+        if (UnityEngine.Random.Range(0f, 1f) < 0.5f)
+        {
+            Instantiate(depravedPrefab, spawnPos, Quaternion.identity);
+            return currentDifficulty + 10f * multiplier;
+        }
+        else
+        {
+            Instantiate(magePrefab, spawnPos, Quaternion.identity);
+            return currentDifficulty + 20f * multiplier;
+        }
+    }
+
+    float GetSizeRating(float roomSize, float minSize, float maxSize)
+    {
+        float normalizedSize = (roomSize - minSize) / (maxSize - minSize);
+
+        float difficulty = 100f - 50f * Mathf.Sqrt(normalizedSize);
+
+        return difficulty;
+    }
+
+    float ApplyCoverReduction(float baseDifficulty, char[,] layout)
+    {
+        float coverPercentage = CalculateCoverPercentage(layout);
+        float coverImpact = coverPercentage * coverPercentage;
+
+        float maxReduction = 40f;
+        float reduction = coverImpact * maxReduction;
+
+        return Mathf.Max(baseDifficulty - reduction, 30f) / 100;
+    }
+
+    float CalculateCoverPercentage(char[,] matrix)
+    {
+        int rows = matrix.GetLength(0);
+        int cols = matrix.GetLength(1);
+
+        int totalCells = 0;
+        int coverCells = 0;
+
+        for (int i = 1; i < rows - 1; i++)
+        {
+            for (int j = 1; j < cols - 1; j++)
+            {
+                totalCells++;
+                if (matrix[i, j] == 'W')
+                {
+                    coverCells++;
+                }
+            }
+        }
+
+        return totalCells > 0 ? (float)coverCells / totalCells : 0f;
     }
 
     void PlaceCorridors()
@@ -271,6 +386,17 @@ public class LevelGenerationController : MonoBehaviour
 
         return (pos.x == xMin || pos.x == xMax) &&
                (pos.y == yMin || pos.y == yMax);
+    }
+
+    bool IsOutside(Rect room, Vector2Int pos)
+    {
+        int xMin = (int)room.xMin;
+        int xMax = (int)room.xMax - 1;
+        int yMin = (int)room.yMin;
+        int yMax = (int)room.yMax - 1;
+
+        return pos.x > xMax || pos.x < xMin ||
+            pos.y > yMax || pos.y < yMin;
     }
 
     void Update()
