@@ -27,7 +27,7 @@ public class LevelGenerationController : MonoBehaviour
         roomGenerator.InitializeTileDictionaries();
         //Debug();
         
-        GenerateLevel(5);
+        GenerateLevel(3);
     }
 
     void InitializeLevelValues()
