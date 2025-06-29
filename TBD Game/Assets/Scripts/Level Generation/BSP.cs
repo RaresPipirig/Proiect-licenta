@@ -256,7 +256,6 @@ public class BSP : MonoBehaviour
         if (leftRooms.Count == 0 || rightRooms.Count == 0)
             return;
 
-        // Try to find a pair of rooms that can be connected
         bool connectionMade = false;
         int maxAttempts = leftRooms.Count * rightRooms.Count;
         int attempts = 0;
@@ -277,7 +276,6 @@ public class BSP : MonoBehaviour
         if (!connectionMade)
         {
             print("Could not find connectable rooms after " + maxAttempts + " attempts");
-            // Fall back to connecting any two rooms with L-shaped corridor
             Rect leftRoom = leftRooms[UnityEngine.Random.Range(0, leftRooms.Count)];
             Rect rightRoom = rightRooms[UnityEngine.Random.Range(0, rightRooms.Count)];
             DrawLShapedCorridor(leftRoom, rightRoom);
@@ -308,13 +306,11 @@ public class BSP : MonoBehaviour
 
     bool CanConnectRooms(Rect room1, Rect room2)
     {
-        // Check if rooms can be connected with a straight corridor
         return CanConnectStraight(room1, room2) || HasClearPath(room1, room2);
     }
 
     bool CanConnectStraight(Rect room1, Rect room2)
     {
-        // Check for horizontal alignment (vertical overlap)
         if (room1.yMax >= room2.y && room1.y <= room2.yMax)
         {
             // Check if there's a clear horizontal path
@@ -331,7 +327,6 @@ public class BSP : MonoBehaviour
             }
         }
 
-        // Check for vertical alignment (horizontal overlap)
         if (room1.xMax >= room2.x && room1.x <= room2.xMax)
         {
             // Check if there's a clear vertical path
@@ -353,13 +348,9 @@ public class BSP : MonoBehaviour
 
     bool HasClearPath(Rect room1, Rect room2)
     {
-        // For L-shaped corridors, check if we can create a clear L-path
-        // This is a simplified check - you might want to make it more sophisticated
-
         Vector2Int point1 = GetBestConnectionPoint(room1, room2);
         Vector2Int point2 = GetBestConnectionPoint(room2, room1);
 
-        // Check both possible L-shapes
         bool horizontalFirstClear = IsClearPath(point1.x, point1.y, point2.x, point1.y) &&
                                    IsClearPath(point2.x, point1.y, point2.x, point2.y);
 
@@ -395,7 +386,7 @@ public class BSP : MonoBehaviour
         }
         else
         {
-            return false; // Not a straight line
+            return false;
         }
 
         return true;
@@ -415,7 +406,6 @@ public class BSP : MonoBehaviour
 
     void AddDoorToRoom(Rect room, Vector2Int doorPosition)
     {
-        // Find the leaf that contains this room and add the door position
         foreach (Leaf leaf in leaves)
         {
             if (leaf.room == room)
@@ -428,7 +418,6 @@ public class BSP : MonoBehaviour
 
     void DrawStraightCorridorBetweenRooms(Rect room1, Rect room2)
     {
-        // Check for horizontal connection
         if (room1.yMax >= room2.y && room1.y <= room2.yMax)
         {
             int minY = Mathf.Max((int)room1.y, (int)room2.y);
@@ -442,22 +431,21 @@ public class BSP : MonoBehaviour
             {
                 startPoint = new Vector2Int((int)room1.xMax, corridorY);
                 endPoint = new Vector2Int((int)room2.x - 1, corridorY);
-                door1 = new Vector2Int((int)room1.xMax - 1, corridorY); // Door on room1's right edge
-                door2 = new Vector2Int((int)room2.x, corridorY); // Door on room2's left edge
+                door1 = new Vector2Int((int)room1.xMax - 1, corridorY);
+                door2 = new Vector2Int((int)room2.x, corridorY);
             }
             else
             {
                 startPoint = new Vector2Int((int)room1.x - 1, corridorY);
                 endPoint = new Vector2Int((int)room2.xMax, corridorY);
-                door1 = new Vector2Int((int)room1.x, corridorY); // Door on room1's left edge
-                door2 = new Vector2Int((int)room2.xMax - 1, corridorY); // Door on room2's right edge
+                door1 = new Vector2Int((int)room1.x, corridorY);
+                door2 = new Vector2Int((int)room2.xMax - 1, corridorY);
             }
 
             AddDoorToRoom(room1, door1);
             AddDoorToRoom(room2, door2);
             DrawStraightCorridor(startPoint, endPoint);
         }
-        // Check for vertical connection
         else if (room1.xMax >= room2.x && room1.x <= room2.xMax)
         {
             int minX = Mathf.Max((int)room1.x, (int)room2.x);
@@ -471,15 +459,15 @@ public class BSP : MonoBehaviour
             {
                 startPoint = new Vector2Int(corridorX, (int)room1.yMax);
                 endPoint = new Vector2Int(corridorX, (int)room2.y - 1);
-                door1 = new Vector2Int(corridorX, (int)room1.yMax - 1); // Door on room1's top edge
-                door2 = new Vector2Int(corridorX, (int)room2.y); // Door on room2's bottom edge
+                door1 = new Vector2Int(corridorX, (int)room1.yMax - 1);
+                door2 = new Vector2Int(corridorX, (int)room2.y);
             }
             else
             {
                 startPoint = new Vector2Int(corridorX, (int)room1.y - 1);
                 endPoint = new Vector2Int(corridorX, (int)room2.yMax);
-                door1 = new Vector2Int(corridorX, (int)room1.y); // Door on room1's bottom edge
-                door2 = new Vector2Int(corridorX, (int)room2.yMax - 1); // Door on room2's top edge
+                door1 = new Vector2Int(corridorX, (int)room1.y);
+                door2 = new Vector2Int(corridorX, (int)room2.yMax - 1);
             }
 
             AddDoorToRoom(room1, door1);
@@ -519,7 +507,6 @@ public class BSP : MonoBehaviour
         Vector2Int leftPoint = GetBestConnectionPoint(leftRoom, rightRoom);
         Vector2Int rightPoint = GetBestConnectionPoint(rightRoom, leftRoom);
 
-        // Choose the clearest L-path
         bool horizontalFirstClear = IsClearPath(leftPoint.x, leftPoint.y, rightPoint.x, leftPoint.y) &&
                                    IsClearPath(rightPoint.x, leftPoint.y, rightPoint.x, rightPoint.y);
 
@@ -532,20 +519,18 @@ public class BSP : MonoBehaviour
         else if (!horizontalFirstClear && verticalFirstClear)
             horizontalFirst = false;
         else
-            horizontalFirst = UnityEngine.Random.Range(0f, 1f) > 0.5f; // Random if both or neither work
+            horizontalFirst = UnityEngine.Random.Range(0f, 1f) > 0.5f;
 
         Vector2Int door1 = MoveDoorInsideRoom(leftRoom, leftPoint);
         Vector2Int door2 = MoveDoorInsideRoom(rightRoom, rightPoint);
 
         if (horizontalFirst)
         {
-            // Draw horizontal then vertical
             DrawStraightCorridor(leftPoint, new Vector2Int(rightPoint.x, leftPoint.y));
             DrawStraightCorridor(new Vector2Int(rightPoint.x, leftPoint.y), rightPoint);
         }
         else
         {
-            // Draw vertical then horizontal
             DrawStraightCorridor(leftPoint, new Vector2Int(leftPoint.x, rightPoint.y));
             DrawStraightCorridor(new Vector2Int(leftPoint.x, rightPoint.y), rightPoint);
         }
@@ -594,7 +579,7 @@ public class BSP : MonoBehaviour
             int safeYMin = yMin + 1;
             int safeYMax = yMax - 1;
 
-            if (safeYMin >= safeYMax) safeYMin = yMin; // fallback to corners
+            if (safeYMin >= safeYMax) safeYMin = yMin;
             int randomY = UnityEngine.Random.Range(safeYMin, safeYMax);
 
             if (direction.x > 0)
@@ -620,7 +605,6 @@ public class BSP : MonoBehaviour
 
     bool IsValidCorridorPosition(int x, int y)
     {
-        // Check bounds
         if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight)
             return false;
 

@@ -31,16 +31,7 @@ public class HPSystem : MonoBehaviour
             playerController.HP = Mathf.Min(playerController.HP, maxHP);
         }
     }
-    public bool UseHP(float amount)
-    {
-        if (playerController.HP >= amount)
-        {
-            playerController.HP -= amount;
-            recoveryCooldown = recoveryDelay;
-            return true;
-        }
-        return false;
-    }
+
     public float GetHPPercent()
     {
         return playerController.HP / maxHP;
