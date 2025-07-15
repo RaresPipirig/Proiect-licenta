@@ -19,6 +19,8 @@ public class BSP : MonoBehaviour
     internal char[,] matrix;
 
     internal List<Leaf> leaves = new List<Leaf>();
+    public char[,] debug;
+    int index;
 
     void Start()
     {
@@ -69,6 +71,7 @@ public class BSP : MonoBehaviour
         mapHeight = height;
         maxIterations = numberOfIterations;
         leaves = new List<Leaf>();
+        index = 0;
 
         CreateSplits(maxSplits);
 
@@ -155,6 +158,7 @@ public class BSP : MonoBehaviour
 
         Leaf root = new Leaf(0, 0, mapWidth, mapHeight);
         leaves.Add(root);
+        DebugMatrix();
 
         bool didSplit = true;
         int iterations = 0;
@@ -183,8 +187,49 @@ public class BSP : MonoBehaviour
                 }
             }
             leaves.AddRange(newLeaves);
+            DebugMatrix();
             iterations++;
         }
+    }
+
+    public void DebugMatrix()
+    {
+        string path = "Assets/Scripts/BSP" + index + ".txt";
+        debug = new char[mapWidth, mapHeight];
+        char sector = '0';
+
+        foreach (Leaf l in leaves)
+        {
+            if(l.leftChild == null && l.rightChild == null)
+            {
+                for (int i = l.x; i < l .x + l.width; i++)
+                {
+                    for (int j = l.y; j < l.y + l.height; j++)
+                    {
+                        debug[i, j] = sector;
+                    }
+                }
+
+                sector = (char)(sector + 1);
+            }
+        }
+
+        using (StreamWriter writer = new StreamWriter(path))
+        {
+            for (int i = 0; i < mapWidth; i++)
+            {
+                for (int j = 0; j < mapHeight; j++)
+                {
+                    writer.Write(' ');
+                    writer.Write(debug[i, j]);
+                    writer.Write(' ');
+                }
+                writer.WriteLine();
+            }
+        }
+
+        print("Debug " + index + " written to file.");
+        index++;
     }
 
     public class Leaf

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.U2D.Animation;
 using UnityEngine;
@@ -20,6 +22,8 @@ public class LevelGenerationController : MonoBehaviour
     public GameObject playerPrefab;
     public GameObject depravedPrefab;
     public GameObject magePrefab;
+
+    int index;
 
     void Start()
     {
@@ -138,6 +142,7 @@ public class LevelGenerationController : MonoBehaviour
     void PlaceRooms(int targetDifficulty)
     {
         bool firstRoom = true;
+        index = 0;
 
         foreach (Leaf l in layoutGenerator.leaves)
         {
@@ -157,8 +162,48 @@ public class LevelGenerationController : MonoBehaviour
                 if (!firstRoom)
                     SpawnEnemies(l, layoutMatrix, targetDifficulty);
                 firstRoom = false;
+
+                DebugMatrixes(floorMatrix, wallsMatrix);
             }
         }
+    }
+
+    public void DebugMatrixes(char[,] floor, char[,] walls)
+    {
+        string path = "Assets/Scripts/floor" + index + ".txt";
+
+        using (StreamWriter writer = new StreamWriter(path))
+        {
+            for (int i = 0; i < floor.GetLength(0); i++)
+            {
+                for (int j = 0; j < floor.GetLength(1); j++)
+                {
+                    writer.Write(' ');
+                    writer.Write(floor[i, j]);
+                    writer.Write(' ');
+                }
+                writer.WriteLine();
+            }
+        }
+
+        path = "Assets/Scripts/walls" + index + ".txt";
+
+        using (StreamWriter writer = new StreamWriter(path))
+        {
+            for (int i = 0; i < floor.GetLength(0); i++)
+            {
+                for (int j = 0; j < floor.GetLength(1); j++)
+                {
+                    writer.Write(' ');
+                    writer.Write(walls[i, j]);
+                    writer.Write(' ');
+                }
+                writer.WriteLine();
+            }
+        }
+
+        print("Room " + index + " written to file.");
+        index++;
     }
 
     void SpawnEnemies(Leaf l, char[,] layout, int targetDifficulty)
